@@ -45,7 +45,7 @@
   - mirroring to shared harnesses keeps symlinked user skills available without following their targets or overwriting edits
   - the skill identifies external examples as references, synthetic mockups as concepts, and browser captures as the only final design-lock evidence
   - the skill names the fallback path when MCP or image generation is unavailable
-- **Tests:** visual_reference_is_opt_in, visual_reference_preserves_no_mcp, visual_reference_update_preserves_edits, visual_reference_update_preserves_shared_edits, visual_reference_mirrors_symlinked_user_skill, visual_reference_keeps_evidence_separate
+- **Tests:** visual_reference_is_opt_in, visual_reference_preserves_no_mcp, visual_reference_update_preserves_edits, visual_reference_update_preserves_shared_edits, visual_reference_mirrors_user_symlinks, visual_reference_keeps_evidence_separate
 - **Verify:** `python3 kit/.uak/tests/test_visual_reference.py && python3 scripts/kit_lint.py && (cd kit && bash .uak/bin/smoke --package-only)`
 
 Before implementation, the human publishes this new task from the current checkout with `UAK_HUMAN=<their name> bash .uak/bin/uak plan docs/superpowers/plans/2026-11-14-visual-reference.md`. The implementer then runs `bash .uak/bin/uak next` and `bash .uak/bin/wt new UAK-900`, copies this plan into that task worktree, and runs the subagent-driven sequence there. Codex must not set `UAK_HUMAN` for the human-only command.
