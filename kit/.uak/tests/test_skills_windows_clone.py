@@ -119,8 +119,8 @@ def update_refreshes_copied_skills(r):
     d = repo(r, "update")
     run = installer(r)
     run("--mode", "sprint", d)
-    # A Windows install of an older kit left stale copies in both folders.
-    (d / ".agents/skills/test-first/SKILL.md").write_text("stale\n", encoding="utf-8")
+    # Use a known shipped blob: unknown content is a team edit, not a stale kit version.
+    shutil.copyfile(r.package / ".uak/skills/karpathy-guidelines/SKILL.md", d / ".agents/skills/test-first/SKILL.md")
     cur = d / ".cursor/skills"
     cur.mkdir(parents=True)
     shutil.copytree(d / ".claude/skills/test-first", cur / "test-first")   # an unedited copy of the kit's skill (UAK-047)

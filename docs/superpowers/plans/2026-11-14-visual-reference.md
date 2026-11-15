@@ -36,7 +36,7 @@
 - **Type:** feature
 - **Priority:** P2
 - **Depends on:** None
-- **Paths:** install.sh, kit/.uak/skills/visual-reference/, kit/.uak/skills/SOURCES.md, kit/.uak/docs/WHY.md, kit/.uak/tests/test_visual_reference.py, kit/.uak/settings/known-files.txt, docs/superpowers/plans/2026-11-14-visual-reference.md
+- **Paths:** install.sh, kit/.uak/skills/visual-reference/, kit/.uak/skills/SOURCES.md, kit/.uak/docs/WHY.md, kit/.uak/tests/test_visual_reference.py, kit/.uak/tests/test_skills_windows_clone.py, kit/.uak/settings/known-files.txt, docs/superpowers/plans/2026-11-14-visual-reference.md
 - **Acceptance:**
   - default and `--no-mcp` installs do not require external services or install visual-reference by default
   - `--skills visual-reference` installs the skill for Claude, and for shared agent skills when Codex, Cursor, or Gemini is selected, without adding an MCP server or dependency
@@ -54,6 +54,7 @@ Before implementation, the human publishes this new task from the current checko
 **Files:**
 - Create: `kit/.uak/skills/visual-reference/SKILL.md`
 - Create: `kit/.uak/tests/test_visual_reference.py`
+- Modify: `kit/.uak/tests/test_skills_windows_clone.py`
 - Modify: `install.sh`
 - Modify: `kit/.uak/skills/SOURCES.md`
 - Modify: `kit/.uak/docs/WHY.md`
@@ -63,7 +64,7 @@ Before implementation, the human publishes this new task from the current checko
 - Consumes: existing `--skills` comma list, `IDEA.md`, design lock command, configured inspiration MCP and image tool when present.
 - Produces: optional `.claude/skills/visual-reference/SKILL.md` and `.agents/skills/visual-reference/SKILL.md`; no new CLI or MCP tools.
 
-- [ ] **Step 1: Write the failing test.** Follow the `Runner` pattern in `kit/.uak/tests/test_v58.py`, including its `--package` parser, skip when `install.sh` is absent, and nonzero exit on failure. Create fresh Git repos with `r.g(d, "init", "-q", "-b", "main")`; install with `r.run([r.bash, str(r.package.parent / "install.sh"), ... , str(d)], cwd=d)`. Test a default sprint install, opt-in with `--harness claude,codex`, opt-in with `--no-mcp`, and an update after editing the installed skill. Assert the skill appears only where selected, edited content survives update, `.uak-new` is written, and the skill text preserves the evidence boundaries. Do not call an external service.
+- [ ] **Step 1: Write the failing test.** Follow the `Runner` pattern in `kit/.uak/tests/test_v58.py`, including its `--package` parser, skip when `install.sh` is absent, and nonzero exit on failure. Create fresh Git repos with `r.g(d, "init", "-q", "-b", "main")`; install with `r.run([r.bash, str(r.package.parent / "install.sh"), ... , str(d)], cwd=d)`. Test a default sprint install, opt-in with `--harness claude,codex`, opt-in with `--no-mcp`, and an update after editing either the Claude copy or only the shared `.agents` copy. Assert the skill appears only where selected, either edit survives update, `.uak-new` is written, and the skill text preserves the evidence boundaries. Do not call an external service.
 
 ```python
 def visual_reference_is_opt_in(r):
@@ -85,7 +86,7 @@ def visual_reference_is_opt_in(r):
 python3 kit/.uak/tests/test_visual_reference.py
 ```
 
-- [ ] **Step 3: Implement the smallest installer change.** Add `visual-reference` to the `--skills` match near `taste` and create one short skill. Its sequence is brief → optional 2–3 source URLs/traits → optional synthetic desktop/mobile images under `.uak-shots/visual-reference/` → existing design round → browser captures → human selection. In the skill, identify Awwwards and Mobbin MCP as optional user-configured reference sources; do not include a setup command or run a package. Stop at references in marathon mode. Note fallback when the MCP or image tool is missing, and respect an already approved design lock. Add an `own` provenance row and a WHY row citing the existing design-lock screenshot failure and the need to keep concepts separate from product evidence.
+- [ ] **Step 3: Implement the smallest installer change.** Add `visual-reference` to the `--skills` match near `taste` and create one short skill. Preserve independently edited `.agents` skill copies on update through the installer's existing `put` conflict mechanism; adjust the historical Windows clone fixture so its refresh assertion uses a known shipped kit blob instead of unknown team content. The skill's sequence is brief → optional 2–3 source URLs/traits → optional synthetic desktop/mobile images under `.uak-shots/visual-reference/` → existing design round → browser captures → human selection. Identify Awwwards and Mobbin MCP as optional user-configured reference sources; do not include a setup command or run a package. Stop at references in marathon mode. Note fallback when the MCP or image tool is missing, and respect an already approved design lock. Add an `own` provenance row and a WHY row citing the existing design-lock screenshot failure and the need to keep concepts separate from product evidence.
 
 ```sh
 case ",$extra," in *,visual-reference,*) skills="$skills visual-reference";; esac
@@ -105,7 +106,7 @@ python3 scripts/kit_lint.py
 (cd kit && bash .uak/bin/smoke --package-only)
 git diff --check
 git diff --stat
-git add install.sh kit/.uak/skills/visual-reference kit/.uak/skills/SOURCES.md kit/.uak/docs/WHY.md kit/.uak/tests/test_visual_reference.py kit/.uak/settings/known-files.txt docs/superpowers/plans/2026-11-14-visual-reference.md
+git add install.sh kit/.uak/skills/visual-reference kit/.uak/skills/SOURCES.md kit/.uak/docs/WHY.md kit/.uak/tests/test_visual_reference.py kit/.uak/tests/test_skills_windows_clone.py kit/.uak/settings/known-files.txt docs/superpowers/plans/2026-11-14-visual-reference.md
 git commit -m "Add optional visual reference skill"
 git push -u origin HEAD
 ```

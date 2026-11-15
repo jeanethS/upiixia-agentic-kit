@@ -259,7 +259,7 @@ EOF2
     rmdir "$target/.cursor/skills" 2>/dev/null || true
   fi
   mkdir -p "$target/.agents/skills"
-  cp -R "$target/.claude/skills/." "$target/.agents/skills/" 2>/dev/null || true
+  putdir "$target/.claude/skills" "$target/.agents/skills"
   say "  + .agents/skills (the skills and the /uak-* phase skills, refreshed)"
 fi
 # Phase skills and Gemini commands follow .claude/commands: the other mode's script (uak-spec in sprint, uak-demo in
