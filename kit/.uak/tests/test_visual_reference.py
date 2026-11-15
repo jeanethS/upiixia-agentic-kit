@@ -54,6 +54,20 @@ def visual_reference_update_preserves_edits(r):
     expect(not (d / ".mcp.json").exists(), "update keeps MCP off")
 
 
+def visual_reference_update_preserves_shared_edits(r):
+    for harness in ("codex", "cursor", "gemini"):
+        d = install(r, "shared-update-" + harness, "--harness", harness, "--skills", "visual-reference", "--no-mcp")
+        skill = d / ".agents/skills/visual-reference/SKILL.md"
+        original = skill.read_text()
+        edited = original + "\nShared-harness reference guidance.\n"
+        skill.write_text(edited)
+        r.run([r.bash, str(r.package.parent / "install.sh"), "--mode", "sprint", "--harness", harness,
+               "--skills", "visual-reference", "--update", str(d)], cwd=d)
+        expect(skill.read_text() == edited, harness + " preserves independent shared edit")
+        expect(Path(str(skill) + ".uak-new").read_text() == original, harness + " proposes the shipped version")
+        expect((d / ".claude/skills/visual-reference/SKILL.md").read_text() == original, "Claude copy stays unchanged")
+
+
 def visual_reference_keeps_evidence_separate(r):
     skill = r.package / ".uak/skills/visual-reference/SKILL.md"
     expect(skill.is_file(), "visual-reference skill exists")
@@ -67,7 +81,8 @@ def visual_reference_keeps_evidence_separate(r):
 
 
 TESTS = [visual_reference_is_opt_in, visual_reference_preserves_no_mcp,
-         visual_reference_update_preserves_edits, visual_reference_keeps_evidence_separate]
+         visual_reference_update_preserves_edits, visual_reference_update_preserves_shared_edits,
+         visual_reference_keeps_evidence_separate]
 
 
 def main():
