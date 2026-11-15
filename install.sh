@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # UPIIXIA Agentic Kit installer.
 #   bash install.sh --mode sprint|marathon [--stack fastapi-react|nextjs|django|go|expo|python-data|ai-agent|spring-boot|none]
-#                   [--harness claude,codex,cursor,gemini] [--skills ai,tdd,taste] [--no-blackbox] [--no-mcp|--mcp] [--solo] [--update] TARGET
+#                   [--harness claude,codex,cursor,gemini] [--skills ai,tdd,taste,visual-reference] [--no-blackbox] [--no-mcp|--mcp] [--solo] [--update] TARGET
 # Never overwrites your files: if AGENTS.md, CLAUDE.md, settings.json… already exist and differ,
 # the kit's version is written as <file>.uak-new for you to merge. A file that is an earlier kit version nobody
 # edited (its hash is in .uak/settings/known-files.txt) is simply updated.
@@ -167,6 +167,7 @@ case "$mode" in
 esac
 case ",$extra," in *,ai,*) skills="$skills mcp-builder";; esac
 case ",$extra," in *,taste,*|*,design-taste-frontend,*) skills="$skills design-taste-frontend";; esac
+case ",$extra," in *,visual-reference,*) skills="$skills visual-reference";; esac
 case ",$extra," in *,tdd,*) case " $skills " in *" test-driven-development "*) ;; *) skills="$skills test-driven-development";; esac;; esac
 case "$stack" in fastapi-react|nextjs|expo) skills="$skills vercel-react-best-practices"; case " $skills " in *" product-ui "*) ;; *) skills="$skills frontend-design product-ui landing-story";; esac;; esac
 [ "$stack" != ai-agent ] || case " $skills " in *" mcp-builder "*) ;; *) skills="$skills mcp-builder";; esac

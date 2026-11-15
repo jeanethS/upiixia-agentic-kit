@@ -18,6 +18,7 @@ Third-party skills are vendored at a pinned commit after review: no remote instr
 | stack-backend, stack-frontend | own | MIT | `--stack fastapi-react` |
 | product-ui | own | MIT | sprint and every web stack: app screens (layout recipes, hierarchy, the 3-second test, `design-lint`) |
 | landing-story | own | MIT | sprint and every web stack: the landing that tells the idea, built from IDEA.md (the one line, the number, the wow, three steps, the ask) |
+| visual-reference | own | MIT | opt in with `--skills visual-reference`: optional concepts; browser captures remain design-lock evidence |
 | stack-nextjs, stack-django, stack-go, stack-expo, stack-data, stack-ai-agent | own | MIT | `--stack nextjs\|django\|go\|expo\|python-data\|ai-agent` |
 
 Local edits: `superpowers:<skill>` references were renamed to `<skill>`; systematic-debugging points to `test-first` (v5.10).
