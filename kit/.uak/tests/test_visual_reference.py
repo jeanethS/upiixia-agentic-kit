@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Optional visual concepts never replace browser evidence or require a service."""
 import argparse
+import os
 import tempfile
 from pathlib import Path
 
@@ -68,6 +69,38 @@ def visual_reference_update_preserves_shared_edits(r):
         expect((d / ".claude/skills/visual-reference/SKILL.md").read_text() == original, "Claude copy stays unchanged")
 
 
+def visual_reference_mirrors_user_symlinks(r):
+    d = r.scratch / "user-symlinks"
+    d.mkdir()
+    r.g(d, "init", "-q", "-b", "main")
+    source = d / ".claude/skills"
+    source.mkdir(parents=True)
+    outside = r.scratch / "user-skill"
+    outside.mkdir()
+    (outside / "SKILL.md").write_text("User skill content.\n")
+    (source / "user-dir").symlink_to(outside, target_is_directory=True)
+    (source / "user-file").mkdir()
+    (source / "user-file/SKILL.md").symlink_to(outside / "SKILL.md")
+    (source / "dangling").symlink_to(outside / "missing")
+    command = [r.bash, str(r.package.parent / "install.sh"), "--mode", "sprint", "--harness", "codex", "--no-mcp"]
+    r.run([*command, str(d)], cwd=d)
+    for rel in ("user-dir", "user-file/SKILL.md", "dangling"):
+        dest = d / ".agents/skills" / rel
+        expect(dest.is_symlink(), "shared harness receives user symlink " + rel)
+        expect(os.readlink(dest) == os.readlink(source / rel), "symlink target is preserved without copying its content")
+    shared = d / ".agents/skills/user-dir"
+    shared.unlink()
+    shared.mkdir()
+    (shared / "SKILL.md").write_text("Shared directory edit.\n")
+    shared_file = d / ".agents/skills/user-file/SKILL.md"
+    shared_file.unlink()
+    shared_file.write_text("Shared file edit.\n")
+    r.run([*command, "--update", str(d)], cwd=d)
+    expect((shared / "SKILL.md").read_text() == "Shared directory edit.\n", "existing shared directory is preserved")
+    expect(shared_file.read_text() == "Shared file edit.\n", "existing shared file is preserved")
+    expect((outside / "SKILL.md").read_text() == "User skill content.\n", "symlink target is unchanged")
+
+
 def visual_reference_keeps_evidence_separate(r):
     skill = r.package / ".uak/skills/visual-reference/SKILL.md"
     expect(skill.is_file(), "visual-reference skill exists")
@@ -82,7 +115,7 @@ def visual_reference_keeps_evidence_separate(r):
 
 TESTS = [visual_reference_is_opt_in, visual_reference_preserves_no_mcp,
          visual_reference_update_preserves_edits, visual_reference_update_preserves_shared_edits,
-         visual_reference_keeps_evidence_separate]
+         visual_reference_mirrors_user_symlinks, visual_reference_keeps_evidence_separate]
 
 
 def main():

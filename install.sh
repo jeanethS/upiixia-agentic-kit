@@ -260,6 +260,13 @@ EOF2
   fi
   mkdir -p "$target/.agents/skills"
   putdir "$target/.claude/skills" "$target/.agents/skills"
+  find "$target/.claude/skills" -type l | while IFS= read -r link; do
+    dest="$target/.agents/skills/${link#"$target/.claude/skills/"}"
+    if [ ! -e "$dest" ] && [ ! -L "$dest" ]; then
+      mkdir -p "$(dirname "$dest")"
+      cp -P "$link" "$dest"
+    fi
+  done
   say "  + .agents/skills (the skills and the /uak-* phase skills, refreshed)"
 fi
 # Phase skills and Gemini commands follow .claude/commands: the other mode's script (uak-spec in sprint, uak-demo in
