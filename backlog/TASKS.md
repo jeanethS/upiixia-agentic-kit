@@ -852,3 +852,26 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** inherits_motif_text_without_family, no_motif_comment_says_read_the_page, child_task_layout_sentence_by_level, level4_text_mentions_praised_motif
 - **Verify:** `python3 kit/.uak/tests/test_design_creativity_inherit.py`
 - **Next step:** the `inherit = par and praised(note) and (par.get("motif") or {}).get("family")` line in `assign()` (design_creativity.py:~97);, `child_task` in design_breed.py:326.
+## UAK-087 · A PR merged or closed on GitHub moves its task on the board without its owner
+
+- **Type:** bug
+- **Priority:** P1
+- **Estimate:** 90 min
+- **Depends on:** —
+- **Paths:** kit/.uak/bin/lib/github.sh, kit/.uak/bin/hook, kit/.uak/tests/test_pr_sync_reconcile.py, kit/.uak/docs/CLI.md, kit/.uak/docs/WHY.md
+- **Acceptance:** `uak pr-sync` with a task in REVIEW or CLAIMED whose PR is MERGED runs the integrate path in the same call (normal proof first, then Integrated-Outside) and the task reads INTEGRATED on claims; when integrate refuses, the existing "record it" request is sent once, as today. A PR CLOSED without merge sends one request to the task ("closed without merge: reopen, open a new PR, or uak release ID --cancel REASON") and is told once (meta/pr/ID.md). The post-tool hook's 5-min pr-sync covers every REVIEW and CLAIMED task with a branch, not only the current identity's, so any live agent reconciles the board. Why (deus-ex-machina, 2026-11-09): PRs #4, #73 and #80 were merged with the GitHub button and HACK-002, HACK-019 stayed REVIEW and HACK-018 CLAIMED; PRs #5, #8, #10, #11 were closed unmerged and their tasks stayed REVIEW; the owners' sessions had ended, so the owner-only pr-sync never ran and the board froze at 19:24 while merges went on until 20:50.
+- **Tests:** merged_pr_integrates_on_sync, merged_pr_refused_integrate_sends_request_once, closed_pr_sends_request_once, hook_syncs_tasks_of_other_identities
+- **Verify:** `python3 kit/.uak/tests/test_pr_sync_reconcile.py`
+- **Next step:** the `merged)` branch of pr_sync_mutate in kit/.uak/bin/lib/github.sh (line ~66) and the jq filter in pr_sync_run (line ~33), with UAK_GH as the fake gh
+
+## UAK-088 · uak tokens charges a session to the task worktree it works in, not only the folder it started in
+
+- **Type:** bug
+- **Priority:** P1
+- **Estimate:** 90 min
+- **Depends on:** —
+- **Paths:** kit/.uak/bin/tokens, kit/.uak/tests/test_tokens_attribution.py, kit/.uak/docs/CLI.md, kit/.uak/docs/WHY.md
+- **Acceptance:** a Claude Code transcript under the main checkout's project folder charges each assistant message to the task of the last `<repo>-wt/<id>` path named in a tool call input before it (Bash command, file_path, path), and to `main` until one appears; a transcript started inside a worktree keeps today's attribution; a Codex rollout uses each turn's `cwd` (plain or `file://`) with the same rule, so a session that moves between worktrees is split per task; dedupe by message id and the published file format are unchanged; `tokens` on a fixture with one main-launched session that works in `-wt/hack-018` shows HACK-018 with that spend and main with the rest. Why (deus-ex-machina, 2026-11-11): 194.6M tokens published, 100 % in "main", 0 per task; every Claude Code and Codex session was launched in the main checkout and then worked in `deus-ex-machina-wt/hack-*` (one session: 420 lines, every `cwd` the main checkout, 79 paths under hack-018). Claude Code never changes the transcript `cwd` after a `cd`.
+- **Tests:** claude_main_session_split_by_worktree_paths, claude_worktree_session_unchanged, codex_turn_cwd_splits_session, dedupe_and_publish_format_unchanged
+- **Verify:** `python3 kit/.uak/tests/test_tokens_attribution.py && python3 kit/.uak/tests/test_tokens_coverage.py`
+- **Next step:** the per-file awk in scan_local of kit/.uak/bin/tokens (line ~53, Claude) and the Codex awk (line ~78); fixtures as small jsonl files written by the test
