@@ -1,9 +1,9 @@
 # STATE
 
 Phase: execution
-Updated: 1794899463
-AVAILABLE: UAK-088 
-CLAIMED: UAK-087 
+Updated: 1794899502
+AVAILABLE: (16; last 12) ... UAK-093 UAK-094 UAK-095 UAK-096 UAK-097 UAK-098 UAK-099 UAK-100 UAK-101 UAK-102 UAK-103 UAK-104 
+CLAIMED: UAK-087 UAK-091 
 BLOCKED: -
 REVIEW: UAK-901 
 INTEGRATED: (79; last 12) ... UAK-075 UAK-076 UAK-077 UAK-078 UAK-079 UAK-080 UAK-081 UAK-082 UAK-083 UAK-084 UAK-085 UAK-086 
@@ -11,6 +11,7 @@ CANCELLED: UAK-002 UAK-005
 
 Claims (first 24; status --task ID shows detail):
 UAK-087 | CLAIMED | jeaneth-hernandez-1 | until 1794883702 (EXPIRED: release --expired --read-summary TOKEN)
+UAK-091 | CLAIMED | sol-091 | until 1794913902
 UAK-901 | REVIEW | jeaneth-hernandez-2 | until 1794981364
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
