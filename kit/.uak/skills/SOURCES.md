@@ -22,7 +22,7 @@ Third-party skills are vendored at a pinned commit after review: no remote instr
 | landing-story | own | MIT | sprint and every web stack: the landing that tells the idea, built from IDEA.md (the one line, the number, the wow, three steps, the ask) |
 | stack-nextjs, stack-django, stack-go, stack-expo, stack-data, stack-ai-agent | own | MIT | `--stack nextjs\|django\|go\|expo\|python-data\|ai-agent` |
 
-Local edits: verification skills use the installed harness skills folders and bundled references, with no runtime instruction downloads; `superpowers:<skill>` references were renamed to `<skill>`; systematic-debugging points to `test-first` (v5.10).
+Local edits: the verification feature-map example drives each step from the state it states (search reopened before filling, the proof re-run on a populated result, a `mktemp -d` data dir); verification skills use the installed harness skills folders and bundled references, with no runtime instruction downloads; `superpowers:<skill>` references were renamed to `<skill>`; systematic-debugging points to `test-first` (v5.10).
 Rejected:
 - skills that download instructions at runtime (prompt injection by design);
 - `output-skill` (works against token economy);
