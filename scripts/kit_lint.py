@@ -65,7 +65,8 @@ def code_lines(path, findings):
         marker = re.search(r"kit-lint: ok\b(.*)", line)
         if not marker:
             continue
-        expiry = re.search(r"\buntil\b\s*(\S*)", marker[1])
+        # The date follows the reason: "until" inside the parentheses is part of the reason.
+        expiry = re.search(r"\buntil\b\s*(\S*)", re.sub(r"^\s*\([^)]*\)", "", marker[1]))
         if expiry:
             try:
                 if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", expiry[1]):

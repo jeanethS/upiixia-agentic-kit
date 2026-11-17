@@ -76,7 +76,8 @@ class WhyEnforced(unittest.TestCase):
 
     def test_an_undated_exception_still_passes(self):
         for script in ("declare -A x # kit-lint: ok (fixture)\n",
-                       "# kit-lint: ok (fixture)\ndeclare -A x\n"):
+                       "# kit-lint: ok (fixture)\ndeclare -A x\n",
+                       "declare -A x # kit-lint: ok (keep until bash 4 is everywhere)\n"):
             with self.subTest(script=script):
                 self.write("kit/.uak/bin/fixture", "#!/bin/bash\n" + script)
                 rc, out = self.run_lint()
