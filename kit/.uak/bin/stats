@@ -57,6 +57,7 @@ if [ -n "$sroot" ]; then
       n = split($1, p, " "); s = substr($0, length($1) + 2)
       if (n == 1 && s !~ /^[A-Z][A-Z0-9]*-[0-9][0-9][0-9]+/ && s !~ /\(#[0-9]+\)$/) d++ } END { print d + 0 }')
     [ "${fp_all:-0}" -eq 0 ] || printf 'Direct to main: %s of %s first-parent commits\n' "$fp_direct" "$fp_all"
+    printf 'REVERTS: pending\n'
   fi
 fi
 rec=$(grep -c 'REQUIRES_RECOVERY' "$dir/DECISIONS.md" 2>/dev/null || true)
