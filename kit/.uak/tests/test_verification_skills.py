@@ -104,4 +104,9 @@ class VerificationSkills(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main(verbosity=2)
+    import argparse
+    import sys
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--package")
+    _, remaining = parser.parse_known_args()
+    unittest.main(argv=[sys.argv[0]] + remaining, verbosity=2)
