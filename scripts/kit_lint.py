@@ -113,7 +113,7 @@ def check_why_enforced(findings):
             findings.append(prefix + "rule needs a nonempty Enforced by column")
             continue
         enforcer = cells[column]
-        for name in re.findall(r"(?:[\w.-]+/)*test_[\w-]+\.py\b", enforcer):
+        for name in re.findall(r"(?<![\w./-])[\w./-]+\.py\b", enforcer):
             test = ROOT / name if "/" in name else ROOT / "kit/.uak/tests" / name
             if not test.is_file():
                 findings.append(prefix + "missing test file " + name)
