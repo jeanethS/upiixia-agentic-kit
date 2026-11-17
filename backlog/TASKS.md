@@ -875,3 +875,14 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** claude_main_session_split_by_worktree_paths, claude_worktree_session_unchanged, codex_turn_cwd_splits_session, dedupe_and_publish_format_unchanged
 - **Verify:** `python3 kit/.uak/tests/test_tokens_attribution.py && python3 kit/.uak/tests/test_tokens_coverage.py`
 - **Next step:** the per-file awk in scan_local of kit/.uak/bin/tokens (line ~53, Claude) and the Codex awk (line ~78); fixtures as small jsonl files written by the test
+## UAK-901 · Measure visual-reference against real page captures
+
+- **Type:** feature
+- **Priority:** P1
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** scripts/visual_reference_eval.py, kit/.uak/tests/test_visual_reference_eval.py, docs/evals/visual-reference.md
+- **Acceptance:** an offline evaluator reads a manifest of paired baseline and visual-reference variants for the same briefs and reports human-score differences and measured token totals, it refuses missing or synthetic-only captures, invalid scores, and unmatched pairs; unknown token use stays null, the documented loop uses real `design shoot` captures, blind human scores, and a reviewed PR for any change to a skill or prior, `cd kit && bash .uak/bin/smoke --package-only` exits 0
+- **Tests:** scores_paired_real_captures, refuses_missing_or_synthetic_captures, refuses_invalid_or_unpaired_scores, preserves_unknown_token_usage
+- **Verify:** `python3 kit/.uak/tests/test_visual_reference_eval.py`
+- **Next step:** write the four assertions against a minimal JSON manifest before implementing the evaluator
