@@ -7,17 +7,19 @@
 Why: the portability rules lived in AGENTS.md and CONTRIBUTING.md, and every one of them was broken at least once
 (an awk interval mawk ignores, a BSD sed without \\|, `awk -W version` hanging on macOS, a `${s//[class]/}` that took
 47 s on bash 3.2). A rule in prose is a suggestion; this file makes each one fail the build. A deliberate exception
-carries `kit-lint: ok (why)` on the same line or the line above.
+carries `kit-lint: ok (why)` on the same line or the line above; an optional `until YYYY-MM-DD` is inclusive.
 Structure checks keep the pieces in step: every command documented, every test file registered and run in CI, every
 installed skill vendored and recorded.
 """
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,19 +56,70 @@ PORTABILITY = [
 AWK_INTERVAL = re.compile(r"awk[^|]*'[^']*/[^/']*\{[0-9]+(,[0-9]*)?\}[^/']*/")
 
 
-def code_lines(path):
+def code_lines(path, findings):
     """(number, line, the two lines before) of the lines that are code, with the exception marker honored."""
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    today = date.fromisoformat(os.environ.get("KIT_LINT_TODAY", date.today().isoformat()))
+    exceptions = set()
+    for n, line in enumerate(lines, 1):
+        marker = re.search(r"kit-lint: ok\b(.*)", line)
+        if not marker:
+            continue
+        expiry = re.search(r"\buntil\b\s*(\S*)", marker[1])
+        if expiry:
+            try:
+                if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", expiry[1]):
+                    raise ValueError
+                expires = date.fromisoformat(expiry[1])
+            except ValueError:
+                findings.append("%s:%d · exception-expiry · invalid expiry date %s" %
+                                (path.relative_to(ROOT), n, expiry[1]))
+                continue
+            if expires < today:
+                findings.append("%s:%d · exception-expiry · expired on %s" %
+                                (path.relative_to(ROOT), n, expires))
+                continue
+        exceptions.add(n)
     for n, line in enumerate(lines, 1):
         before = "\n".join(lines[max(0, n - 3):n - 1])
-        ok = "kit-lint: ok" in line or "kit-lint: ok" in (lines[n - 2] if n > 1 else "")
+        ok = n in exceptions or n - 1 in exceptions
         if line.lstrip().startswith("#") or ok:
             continue
         yield n, line, before
 
 
 def check_why_enforced(findings):
-    pass
+    path = ROOT / "kit/.uak/docs/WHY.md"
+    lint_rules = {rid for rid, _, _ in PORTABILITY} | {
+        "awk-interval", "crlf", "syntax", "exception-expiry", "why-enforced",
+        "no-test-discovery", "hand-kept-tests", "no-test-shards", "test-name", "no-package-arg",
+        "missing-skill", "unrecorded-skill", "not-executable", "budget", "drift", "dogfood", "registry",
+    }
+    header = None
+    lines = path.read_text(encoding="utf-8").splitlines()
+    for n, line in enumerate(lines, 1):
+        if not line.strip().startswith("|"):
+            header = None
+            continue
+        cells = [cell.strip() for cell in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
+        if "Rule" in cells and n < len(lines) and re.fullmatch(r"\s*\|[\s:|\-]+", lines[n]):
+            header = cells
+            continue
+        if header is None or all(re.fullmatch(r":?-+:?", cell) for cell in cells):
+            continue
+        prefix = "%s:%d · why-enforced · " % (path.relative_to(ROOT), n)
+        column = header.index("Enforced by") if "Enforced by" in header else len(cells)
+        if column >= len(cells) or not cells[column]:
+            findings.append(prefix + "rule needs a nonempty Enforced by column")
+            continue
+        enforcer = cells[column]
+        for name in re.findall(r"(?:[\w.-]+/)*test_[\w-]+\.py\b", enforcer):
+            test = ROOT / name if "/" in name else ROOT / "kit/.uak/tests" / name
+            if not test.is_file():
+                findings.append(prefix + "missing test file " + name)
+        for name in re.findall(r"kit_lint:\s*([\w-]+)", enforcer):
+            if name not in lint_rules:
+                findings.append(prefix + "missing lint rule " + name)
 
 
 def unquoted(line):
@@ -84,7 +137,7 @@ def bash_scripts():
 def check_portability(findings):
     for p in bash_scripts():
         rel = p.relative_to(ROOT)
-        for n, line, before in code_lines(p):
+        for n, line, before in code_lines(p, findings):
             for rid, rx, msg in PORTABILITY:
                 text = unquoted(line) if rid.startswith("bash4") else line
                 if not re.search(rx, text):
