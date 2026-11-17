@@ -3,10 +3,10 @@
 name: tla
 on:
   pull_request:
-    paths: ["docs/tla/**", "kit/.uak/bin/lib/tx.sh", "kit/.uak/bin/lib/claim.sh", "scripts/tla_check.sh", ".github/workflows/tla.yml"]
+    paths: ["docs/tla/**", "kit/.uak/bin/lib/tx.sh", "kit/.uak/bin/lib/claim.sh", "kit/.uak/bin/lib/done.sh", "kit/.uak/tests/test_tla_check.py", "scripts/tla_check.sh", ".github/workflows/tla.yml"]
   push:
     branches: [main]
-    paths: ["docs/tla/**", "kit/.uak/bin/lib/tx.sh", "kit/.uak/bin/lib/claim.sh", "scripts/tla_check.sh", ".github/workflows/tla.yml"]
+    paths: ["docs/tla/**", "kit/.uak/bin/lib/tx.sh", "kit/.uak/bin/lib/claim.sh", "kit/.uak/bin/lib/done.sh", "kit/.uak/tests/test_tla_check.py", "scripts/tla_check.sh", ".github/workflows/tla.yml"]
 permissions:
   contents: read
 jobs:
@@ -26,4 +26,9 @@ jobs:
       - name: Model passes, broken variant fails
         env:
           UAK_TLA: "1"
-        run: python3 kit/.uak/tests/test_tla_check.py
+        # A skipped model run would still exit 0: fail it here.
+        run: |
+          rc=0; out=$(python3 kit/.uak/tests/test_tla_check.py 2>&1) || rc=$?
+          printf '%s\n' "$out"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          if printf '%s\n' "$out" | grep -q skipped; then echo "::error::TLC did not run"; exit 1; fi

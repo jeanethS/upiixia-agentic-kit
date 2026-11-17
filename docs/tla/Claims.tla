@@ -18,7 +18,7 @@
 (***************************************************************************)
 EXTENDS Naturals, FiniteSets
 
-CONSTANTS Agents, Tasks, Lease, MaxTime, Budget, CheckTip
+CONSTANTS Agents, Tasks, Lease, ReviewLease, MaxTime, Budget, CheckTip
 
 None == "none"
 Live == {"CLAIMED", "REVIEW"}        \* a claims/ID.md file exists
@@ -31,7 +31,7 @@ VARIABLES
   snap,    \* each agent's clone of claims (fresh_state)
   belief,  \* the Lease-Until each agent last pushed for a task: it works while that is in the future
   now,     \* one clock for everyone (clock skew is not modeled)
-  budget   \* claims and heartbeats left per agent, so every run ends
+  budget   \* claims left per agent: claim and release could otherwise cycle forever
 
 vars == <<st, own, until, snap, belief, now, budget>>
 
@@ -80,28 +80,30 @@ Claim(a, t) ==
   /\ belief' = [belief EXCEPT ![a][t] = now + Lease]
   /\ UNCHANGED now
 
+(* tx.sh refresh_lease: a task in REVIEW gets REVIEW_LEASE. *)
+LeaseFor(s) == IF s = "REVIEW" THEN ReviewLease ELSE Lease
+
 (* claim.sh heartbeat_mutate: require_owner, then tx.sh refresh_lease. *)
 Heartbeat(a, t) ==
   LET S == snap[a] IN
   /\ S.st[t] \in Live /\ S.own[t] = a
-  /\ Spend(a)
-  /\ Push(a, [S EXCEPT !.until[t] = now + Lease])
-  /\ belief' = [belief EXCEPT ![a][t] = now + Lease]
-  /\ UNCHANGED now
-
-(* done.sh done_mutate: require_owner, CLAIMED -> REVIEW, lease refreshed. *)
-Done(a, t) ==
-  LET S == snap[a] IN
-  /\ S.st[t] = "CLAIMED" /\ S.own[t] = a
-  /\ Push(a, [S EXCEPT !.st[t] = "REVIEW", !.until[t] = now + Lease])
-  /\ belief' = [belief EXCEPT ![a][t] = now + Lease]
+  /\ Push(a, [S EXCEPT !.until[t] = now + LeaseFor(S.st[t])])
+  /\ belief' = [belief EXCEPT ![a][t] = now + LeaseFor(S.st[t])]
   /\ UNCHANGED <<now, budget>>
 
-(* claim.sh release_mutate by the owner: back to AVAILABLE, claim file removed. *)
+(* done.sh done_mutate: require_owner (CLAIMED or REVIEW), -> REVIEW, lease refreshed as REVIEW. *)
+Done(a, t) ==
+  LET S == snap[a] IN
+  /\ S.st[t] \in Live /\ S.own[t] = a
+  /\ Push(a, [S EXCEPT !.st[t] = "REVIEW", !.until[t] = now + ReviewLease])
+  /\ belief' = [belief EXCEPT ![a][t] = now + ReviewLease]
+  /\ UNCHANGED <<now, budget>>
+
+(* claim.sh release_mutate by the owner: back to AVAILABLE, claim file removed, the record keeps its Owner. *)
 Release(a, t) ==
   LET S == snap[a] IN
   /\ S.st[t] \in Live /\ S.own[t] = a
-  /\ Push(a, [S EXCEPT !.st[t] = "AVAILABLE", !.own[t] = None, !.until[t] = 0])
+  /\ Push(a, [S EXCEPT !.st[t] = "AVAILABLE", !.until[t] = 0])
   /\ belief' = [belief EXCEPT ![a][t] = 0]
   /\ UNCHANGED <<now, budget>>
 
@@ -109,7 +111,7 @@ Release(a, t) ==
 ReleaseExpired(a, t) ==
   LET S == snap[a] IN
   /\ S.st[t] \in Live /\ S.own[t] # a /\ now >= S.until[t]
-  /\ Push(a, [S EXCEPT !.st[t] = "AVAILABLE", !.own[t] = None, !.until[t] = 0])
+  /\ Push(a, [S EXCEPT !.st[t] = "AVAILABLE", !.until[t] = 0])
   /\ UNCHANGED <<belief, now, budget>>
 
 (* done.sh integrate_mutate (and review-merge.sh merge): any identity records REVIEW -> INTEGRATED; Owner stays. *)
@@ -131,8 +133,11 @@ Next ==
        \/ \E t \in Tasks : Claim(a, t) \/ Heartbeat(a, t) \/ Done(a, t) \/ Release(a, t)
                            \/ ReleaseExpired(a, t) \/ Integrate(a, t)
 
+(* Strong fairness on the expired release stands for tx.sh's jittered backoff: an agent that keeps getting a
+   fresh clone eventually pushes before the others. Weak fairness is not enough: an owner alternating heartbeat
+   and done would keep every other clone stale forever. *)
 Fairness == \A a \in Agents : /\ WF_vars(Fetch(a))
-                              /\ WF_vars(\E t \in Tasks : ReleaseExpired(a, t))
+                              /\ SF_vars(\E t \in Tasks : ReleaseExpired(a, t))
 
 Spec == Init /\ [][Next]_vars /\ Fairness
 
@@ -145,13 +150,18 @@ NoTwoLiveHolders == \A t \in Tasks : Cardinality(Holders(t)) <= 1
 (* Whoever believes it holds a task is the Owner on the claims tip. *)
 HolderIsOwner == \A t \in Tasks : \A a \in Holders(t) : own[t] = a
 
+(* One identity, one live task (claim.sh check_collisions). NOT in Claims.cfg: the code breaks it. A claim whose
+   lease expired does not block a new claim, and heartbeat_mutate then renews the old one (it checks only
+   require_owner), so one identity holds two live CLAIMED tasks. Add it to INVARIANTS to see the trace. *)
+OneLiveTask == \A a \in Agents : Cardinality({t \in Tasks : st[t] = "CLAIMED" /\ own[t] = a /\ until[t] > now}) <= 1
+
 (* REVIEW and INTEGRATED keep their last holder; INTEGRATED is final. *)
 KeepsLastHolder ==
   [][\A t \in Tasks : /\ st[t] \in {"REVIEW", "INTEGRATED"} /\ st'[t] \in {"REVIEW", "INTEGRATED"}
                          => own'[t] = own[t]]_vars
 IntegratedIsFinal == [][\A t \in Tasks : st[t] = "INTEGRATED" => st'[t] = "INTEGRATED"]_vars
 
-(* An expired claim is always released, renewed or finished: nothing keeps it stuck. *)
-Expired(t) == st[t] = "CLAIMED" /\ until[t] <= now
+(* An expired claim (CLAIMED or REVIEW) is always released, renewed or integrated: nothing keeps it stuck. *)
+Expired(t) == st[t] \in Live /\ until[t] <= now
 ExpiredIsTakenOver == \A t \in Tasks : Expired(t) ~> ~Expired(t)
 ===========================================================================
