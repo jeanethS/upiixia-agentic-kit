@@ -10,3 +10,4 @@
 
 ## History
 - 1794869302 | CLAIMED | jeaneth-hernandez-1 | claim; next: the `merged)` branch of pr_sync_mutate in kit/.uak/bin/lib/github.sh (line ~66) and the jq filter in pr_sync_run (line ~33), with UAK_GH as the fake gh
+- 1794899522 | AVAILABLE | sol-089 | release; claim released by sol-089; reason: -; summary kept
