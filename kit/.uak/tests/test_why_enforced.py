@@ -125,6 +125,27 @@ class WhyEnforced(unittest.TestCase):
         self.assertEqual(findings, [])
 
 
+    def test_a_prefixed_test_name_is_not_an_existing_one(self):
+        self.write("kit/.uak/tests/test_present.py", "")
+        self.write("kit/.uak/docs/WHY.md", "| Rule | Reason | Enforced by |\n|---|---|---|\n"
+                   "| New rule | Incident | `old_test_present.py` |\n")
+        rc, out = self.run_lint()
+        self.assertEqual(rc, 1, out)
+        self.assertIn("old_test_present.py", out)
+
+    def test_an_escaped_pipe_keeps_the_enforcer_cell(self):
+        self.write("kit/.uak/docs/WHY.md", "| Rule | Reason | Enforced by |\n|---|---|---|\n"
+                   "| Rule | Incident | a \\| b `test_missing.py` |\n")
+        rc, out = self.run_lint()
+        self.assertEqual(rc, 1, out)
+        self.assertIn("missing test file test_missing.py", out)
+
+    def test_a_malformed_expiry_on_a_clean_line_is_reported(self):
+        self.write("kit/.uak/bin/fixture", "#!/bin/bash\necho fine # kit-lint: ok (fixture) until 2026-02-30\n")
+        rc, out = self.run_lint()
+        self.assertEqual(rc, 1, out)
+        self.assertIn("invalid expiry date", out)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--package", type=Path, default=REPO / "kit")
