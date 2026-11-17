@@ -95,3 +95,4 @@ Why: a reversible option after 15 min keeps work moving.
 - 1794869291 | plan | JeanethHernandez/JeanethHernandez | tasks added: UAK-087 UAK-088 | Why: backlog without PR (Plan-Channel: claims)
 - 1794892659 | deadline lease/UAK-087/1794883702 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
 - 1794892816 | plan | jeaneth-hernandez/jeaneth-hernandez | tasks added: UAK-901 | Why: backlog without PR (Plan-Channel: claims)
+- 1794892832 | plan --amend | jeaneth-hernandez/jeaneth-hernandez | amended: UAK-901 Paths: scripts/visual_reference_eval.py, kit/.uak/tests/test_visual_reference_eval.py, docs/evals/visual-reference.md → scripts/visual_reference_eval.py, kit/.uak/tests/test_visual_reference_eval.py, docs/evals/visual-reference.md, docs/superpowers/plans/2026-11-16-visual-reference-evals.md; | Why: scope or criteria fixed before review

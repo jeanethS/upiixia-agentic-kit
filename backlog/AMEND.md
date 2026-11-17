@@ -234,3 +234,14 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Tests:** dominant_hue_and_tinted_neutrals, at_most_two_saturated_hues, no_vibrating_pairs, contrast_checked_before_build, palette_round_needs_no_agents, variants_use_picked_palette, capture_flags_palette_drift, taste_learns_palette_features
 - **Verify:** `python3 kit/.uak/tests/test_design_color.py`
 - **Next step:** a new kit/.uak/bin/lib/design_color.py (OKLCH-like lightness/chroma math in the stdlib, harmony rules, contrast, measuring a PNG), then `uak design palettes`
+## UAK-901 · Measure visual-reference against real page captures
+
+- **Type:** feature
+- **Priority:** P1
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** scripts/visual_reference_eval.py, kit/.uak/tests/test_visual_reference_eval.py, docs/evals/visual-reference.md, docs/superpowers/plans/2026-11-16-visual-reference-evals.md
+- **Acceptance:** an offline evaluator reads a manifest of paired baseline and visual-reference variants for the same briefs and reports human-score differences and measured token totals, it refuses missing or synthetic-only captures, invalid scores, and unmatched pairs; unknown token use stays null, the documented loop uses real `design shoot` captures, blind human scores, and a reviewed PR for any change to a skill or prior, `cd kit && bash .uak/bin/smoke --package-only` exits 0
+- **Tests:** scores_paired_real_captures, refuses_missing_or_synthetic_captures, refuses_invalid_or_unpaired_scores, preserves_unknown_token_usage
+- **Verify:** `python3 kit/.uak/tests/test_visual_reference_eval.py`
+- **Next step:** write the four assertions against a minimal JSON manifest before implementing the evaluator

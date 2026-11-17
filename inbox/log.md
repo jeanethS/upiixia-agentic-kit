@@ -317,3 +317,4 @@ Append-only; use bash .uak/bin/uak msg / inbox. Format: - N | epoch | from | to 
 - 313 | 1794793654 | kit-breed-1 | human | human | UAK-086 | Merge of UAK-086 in human queue: Shared resource/CI needs a human: kit/.uak/bin/lib/design_round.py
 - 314 | 1794869291 | JeanethHernandez | all | info | - | Backlog: new tasks UAK-087 UAK-088 published by JeanethHernandez. uak next shows them.
 - 315 | 1794892816 | jeaneth-hernandez | all | info | - | Backlog: new tasks UAK-901 published by jeaneth-hernandez. uak next shows them.
+- 316 | 1794892832 | jeaneth-hernandez | task:UAK-901 | info | UAK-901 | UAK-901 amended by jeaneth-hernandez: Paths scripts/visual_reference_eval.py, kit/.uak/tests/test_visual_reference_eval.py, docs/evals/visual-reference.md, docs/superpowers/plans/2026-11-16-visual-reference-evals.md · Verify `python3 kit/.uak/tests/test_visual_reference_eval.py`. uak status --task UAK-901; the merge gate checks the new Paths.
