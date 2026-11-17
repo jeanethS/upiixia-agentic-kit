@@ -65,6 +65,10 @@ def code_lines(path):
         yield n, line, before
 
 
+def check_why_enforced(findings):
+    pass
+
+
 def unquoted(line):
     return re.sub(r"'[^']*'", "''", line)
 
@@ -251,6 +255,7 @@ def main():
         return 0
     findings = []
     check_portability(findings)
+    check_why_enforced(findings)
     check_structure(findings)
     check_garden(findings)
     check_dogfood(findings)
