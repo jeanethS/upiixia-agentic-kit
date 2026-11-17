@@ -100,6 +100,23 @@ class StatsReverts(unittest.TestCase):
         self.assertIn("0.0%", output)
         self.assertNotIn("UAK-101", output)
 
+    def test_a_revert_trailer_wins_over_a_shared_title(self):
+        self.task_merge("UAK-101")
+        direct = self.commit("direct", "feat: UAK-101")
+        self.commit("undo", 'Revert "feat: UAK-101"', "This reverts commit " + direct + ".")
+        output = self.stats()
+        self.assertIn("0 reverted", output)
+        self.assertNotIn("UAK-101", output)
+
+    def test_a_branch_name_is_not_a_task_id(self):
+        self.task_merge("UAK-101")
+        self.git("checkout", "-q", "-b", "me/utf-8-cleanup")
+        self.commit("utf", "clean up encodings")
+        self.git("checkout", "-q", "main")
+        self.git("merge", "-q", "--no-ff", "me/utf-8-cleanup", "-m", "Merge pull request #7 from me/utf-8-cleanup")
+        output = self.stats()
+        self.assertIn("1 merges", output)
+
     def test_no_merges_prints_zero_not_an_error(self):
         direct = self.commit("direct", "direct change")
         self.git("revert", "--no-edit", direct)
