@@ -10,6 +10,8 @@ You review someone else's task. Your context is disposable, so read the full dif
 1. `bash .uak/bin/uak status --task ID --summary` → branch, PR, Task-Tip (SHA).
 2. `git fetch -q origin <branch>`, `git diff --stat origin/main...origin/<branch>`, then the diff file by file (`git diff origin/main...origin/<branch> -- PATH`). A huge diff output comes back as a per-file index with line ranges of the saved log: read each range with `sed -n A,Bp LOG`.
 3. Criteria: `grep -n -A25 '^## ID' .uak/TASKS.md` (or `uak status --task ID` for tasks from `uak plan`). Check:
+   - use `uak map users` FILE and `uak map impact` ID as the starting point for what the change could break;
+   - name in the verdict note the one fact the change is safe because of and its level: said, pointed at file:line, walked, ran a script, reproduced in the app; below "ran a script" it must be reported as unproven;
    - every criterion has evidence;
    - the diff stays inside `Paths`;
    - no secrets, contracts, CI or others' lockfiles;
