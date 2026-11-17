@@ -886,3 +886,194 @@ Append-only; added to .uak/TASKS.md from main. Why: adding tasks never waits for
 - **Tests:** scores_paired_real_captures, refuses_missing_or_synthetic_captures, refuses_invalid_or_unpaired_scores, preserves_unknown_token_usage
 - **Verify:** `python3 kit/.uak/tests/test_visual_reference_eval.py`
 - **Next step:** write the four assertions against a minimal JSON manifest before implementing the evaluator
+## UAK-089 · uak stats reports the revert rate
+
+- **Type:** feature
+- **Priority:** P1
+- **Estimate:** 2 h
+- **Depends on:** None
+- **Paths:** kit/.uak/bin/stats, kit/.uak/tests/test_stats_reverts.py, kit/.uak/docs/CLI.md
+- **Acceptance:** `uak stats` prints a REVERTS section: task merges on the base in the window, how many were later reverted (a `Revert "…"` commit or `git revert` trailer naming the merge or one of its commits), and the rate as a percent, each reverted task is listed with its ID and the reverting commit's short SHA, no merges in the window prints `0 merges` instead of a division error
+- **Tests:** counts_a_reverted_task_merge, ignores_reverts_of_commits_outside_task_merges, no_merges_prints_zero_not_an_error
+- **Verify:** `python3 kit/.uak/tests/test_stats_reverts.py`
+- **Next step:** the first-parent walk at stats:47 (commits no task merge brought in) already lists task merges; reuse it
+
+## UAK-090 · Every rule in WHY.md names what enforces it, and lint exceptions can expire
+
+- **Type:** feature
+- **Priority:** P1
+- **Estimate:** 3 h
+- **Depends on:** None
+- **Paths:** kit/.uak/docs/WHY.md, scripts/kit_lint.py, kit/.uak/tests/test_why_enforced.py
+- **Acceptance:** every rule table in WHY.md has an `Enforced by` column: a test file, a lint rule name, a command's refusal code, or the word `judgment` when only an instruction covers it, kit_lint fails on a WHY.md rule row with an empty `Enforced by`, and on one that names a test file or lint rule that does not exist, a `kit-lint: ok (why) until YYYY-MM-DD` marker stops excusing its line after that date and kit_lint names the file and line; markers without a date keep working
+- **Tests:** a_row_without_enforcer_fails_lint, an_enforcer_that_does_not_exist_fails_lint, an_expired_exception_fails_lint, an_undated_exception_still_passes
+- **Verify:** `python3 kit/.uak/tests/test_why_enforced.py && python3 scripts/kit_lint.py`
+- **Next step:** the exception check at scripts/kit_lint.py:62
+
+## UAK-091 · Optional verification skills: build and maintain a project's verify skill and feature map
+
+- **Type:** feature
+- **Priority:** P1
+- **Estimate:** 4 h
+- **Depends on:** None
+- **Paths:** kit/.uak/skills/create-verification-skill/, kit/.uak/skills/maintain-verification-skill/, kit/.uak/skills/SOURCES.md, install.sh, kit/.uak/tests/test_verification_skills.py
+- **Acceptance:** both skills come from cursor/plugins pstack pinned at e1cc03121a0e71129a4fb730d7c5528a0a3e43c8 with its MIT LICENSE, recorded in SOURCES.md; references to pstack-only skills (poteto-mode, swarm, arena, unslop) are removed or mapped to kit equivalents, and the content fetches no instructions at runtime, the generated skill goes under the harness's skills folder the kit already installs to, not only `.cursor/skills/`, `install.sh --skills verification` installs both; without the flag neither is installed
+- **Tests:** verification_skills_install_only_with_the_flag, vendored_skills_are_pinned_and_licensed, vendored_skills_fetch_nothing_at_runtime
+- **Verify:** `python3 kit/.uak/tests/test_verification_skills.py && python3 scripts/kit_lint.py`
+- **Next step:** mirror how `visual-reference` is opted in at install.sh:170 and its SOURCES.md row
+
+## UAK-092 · A TLA+ model of the claims protocol that fails on a broken variant
+
+- **Type:** feature
+- **Priority:** P1
+- **Estimate:** 1 d
+- **Depends on:** None
+- **Paths:** docs/tla/, scripts/tla_check.sh, .github/workflows/tla.yml, kit/.uak/tests/test_tla_check.py
+- **Acceptance:** docs/tla/Claims.tla models claim, heartbeat, lease expiry and takeover, release, done and merge over N agents and a compare-and-swap push to the claims tip; every action cites the function in kit/.uak/bin/lib/tx.sh or claim.sh it models, and one TLA+ step is one push in the code, invariants: no task has two live holders; a task in REVIEW or INTEGRATED keeps its last holder; liveness under fairness: an expired lease can always be taken over, a broken variant (push without the tip check) yields a counterexample; `scripts/tla_check.sh` exits 0 on the model and non-zero on the variant, with tla2tools.jar pinned by version and SHA-256, docs/tla/README.md states the bounds (agents, tasks, steps), what is not modeled, and the commit the model last matched, the workflow runs only when docs/tla/, tx.sh or claim.sh change; the engine and the kit payload gain no Java dependency
+- **Tests:** the_model_passes, the_broken_variant_fails_with_a_counterexample, the_jar_is_pinned_by_hash
+- **Verify:** `python3 kit/.uak/tests/test_tla_check.py`
+- **Next step:** the push-and-retry loop in kit/.uak/bin/lib/tx.sh and the evidence at kit/.uak/docs/WHY.md:69 (Reap)
+
+## UAK-093 · The reviewer proves the one fact that makes a change safe
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 90 min
+- **Depends on:** None
+- **Paths:** kit/.claude/agents/uak-reviewer.md, kit/.codex/agents/, kit/.cursor/agents/, kit/.gemini/agents/, kit/.uak/tests/test_reviewer_blast_radius.py
+- **Acceptance:** uak-reviewer names the one fact the change is safe because of, and how far it got: said, pointed at file:line, walked, ran a script, reproduced in the app; below "ran a script" the review says unproven, `uak map users` and `uak map impact` are the starting point for what the change could break, the generated copies are regenerated with `python3 scripts/gen_harness.py`
+- **Tests:** reviewer_asks_for_the_safety_fact_and_its_level, generated_reviewers_match_the_source
+- **Verify:** `python3 kit/.uak/tests/test_reviewer_blast_radius.py && python3 scripts/gen_harness.py --check`
+- **Next step:** the review steps of kit/.claude/agents/uak-reviewer.md
+
+## UAK-094 · Architecture boundaries checked against the code map
+
+- **Type:** feature
+- **Priority:** P1
+- **Estimate:** 4 h
+- **Depends on:** UAK-089, UAK-090
+- **Paths:** kit/.uak/bin/lib/lint.sh, kit/.uak/templates/boundaries.example, kit/.uak/tests/test_boundaries.py, kit/.uak/docs/CLI.md, kit/.uak/docs/WHY.md
+- **Acceptance:** `.uak/boundaries` holds lines `FROM_GLOB !-> TO_GLOB  reason`; `uak lint` reads the import edges of `uak map` and fails on each import that breaks one, printing importer file:line, the imported file, and the reason, no `.uak/boundaries` file means no check and no output, an import already present when the rule was added can be listed in the file as an exception with a date; only new violations fail, WHY.md gets the rule's row with its evidence and `Enforced by: test_boundaries.py`
+- **Tests:** an_import_across_a_boundary_fails_lint, no_boundaries_file_is_silent, a_listed_exception_passes, the_failure_names_file_line_and_reason
+- **Verify:** `python3 kit/.uak/tests/test_boundaries.py`
+- **Next step:** the import edges that `uak map deps` reads from <git dir>/uak-map/
+
+## UAK-095 · uak garden turns a repeated correction into a candidate check
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 3 h
+- **Depends on:** UAK-090
+- **Paths:** kit/.uak/bin/garden, kit/.uak/tests/test_garden_candidates.py
+- **Acceptance:** a new section RULES WITHOUT A CHECK lists WHY.md rows whose `Enforced by` is `judgment` and whose correction shows up again in the transcripts or the black box, each repeated correction gets a candidate with the highest level that could hold it (architecture, type, lint, test, doc) and the past instance a new check must fail on, garden stays read-only: it changes no file
+- **Tests:** a_repeated_judgment_rule_is_listed, a_rule_with_a_check_is_not_listed, garden_writes_nothing
+- **Verify:** `python3 kit/.uak/tests/test_garden_candidates.py`
+- **Next step:** the corrections section of kit/.uak/bin/garden
+
+## UAK-096 · A task's Verify can cite a feature map entry
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** UAK-091, UAK-094
+- **Paths:** kit/.uak/bin/lib/lint.sh, kit/.uak/templates/TASKS.template.md, kit/.uak/tests/test_verify_feature_map.py
+- **Acceptance:** a `Verify:` that names `features/NAME.md` passes lint only when that file exists in the project's verify skill, the template shows one example of a Verify that drives the app through a feature map entry
+- **Tests:** a_missing_feature_file_fails_lint, an_existing_feature_file_passes
+- **Verify:** `python3 kit/.uak/tests/test_verify_feature_map.py`
+- **Next step:** the Verify checks at kit/.uak/bin/lib/lint.sh:30
+
+## UAK-097 · uak done checks that the evidence exists
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** UAK-094
+- **Paths:** kit/.uak/bin/lib/done.sh, kit/.uak/tests/test_done_evidence.py, kit/.uak/docs/CLI.md, kit/.uak/docs/WHY.md
+- **Acceptance:** every commit SHA, `file:line` and repo-relative path in `--evidence` must exist on the task branch; otherwise `done` refuses with `UAK_CODE=evidence-missing` naming the pointer, free text with no pointer keeps working, the new code has a CLI.md Result codes row and a WHY.md row
+- **Tests:** a_missing_sha_is_refused, a_file_line_past_the_end_is_refused, prose_evidence_still_passes
+- **Verify:** `python3 kit/.uak/tests/test_done_evidence.py`
+- **Next step:** EVIDENCE is assembled at kit/.uak/bin/lib/done.sh:37-92
+
+## UAK-098 · Decide whether claims writers can publish separate files (ADR from the model)
+
+- **Type:** spike
+- **Priority:** P2
+- **Estimate:** 4 h
+- **Depends on:** UAK-092
+- **Paths:** docs/tla/, docs/adr/
+- **Acceptance:** a variant of the model where each agent writes only its own file and state is merged on read either keeps the invariants of UAK-092 or yields a counterexample, an ADR (Context, Decision, Consequences, Status) records the result and the Reap retry numbers it would change; no engine change in this task
+- **Tests:** the_per_agent_variant_is_checked
+- **Verify:** `bash scripts/tla_check.sh docs/tla/ClaimsPerAgent.cfg`
+- **Next step:** the shared files the claims branch writes, listed in docs/ARCHITECTURE.md
+
+## UAK-099 · (optional) The strong-tier reviewer runs on another vendor than the implementer
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 3 h
+- **Depends on:** UAK-093, UAK-097
+- **Paths:** scripts/gen_harness.py, kit/.claude/agents/, kit/.codex/agents/, kit/.cursor/agents/, kit/.gemini/agents/, kit/.uak/docs/ORCHESTRATION.md, kit/.uak/docs/COSTS.md, kit/.uak/bin/guard, kit/.uak/docs/WHY.md
+- **Acceptance:** model IDs are checked against the official pages on the day of the change, and TIERS, `guard tier_class` and COSTS.md stay in sync (root AGENTS.md rule 7), WHY.md cites evidence that same-vendor review missed something; without it the task is cancelled
+- **Tests:** reviewer_tier_differs_from_implementer_vendor
+- **Verify:** `python3 scripts/gen_harness.py --check && python3 scripts/kit_lint.py`
+- **Next step:** TIERS at scripts/gen_harness.py:26
+
+## UAK-100 · (optional) Benchmark checklist before a speedup is reported
+
+- **Type:** docs
+- **Priority:** P2
+- **Estimate:** 1 h
+- **Depends on:** UAK-097
+- **Paths:** kit/.uak/docs/LOOPS.md, kit/.uak/docs/WHY.md, kit/.uak/tests/test_loops_benchmark.py
+- **Acceptance:** LOOPS.md asks seven questions before a number is reported (limiter, tuned like production, physical limit, errors, alternating runs with median and range, end-to-end effect, work inside the timed region) and allows the verdict inconclusive, WHY.md cites a past misleading number from this repo (docs/perf-windows.md is the place to look); without one the task is cancelled
+- **Tests:** loops_lists_the_seven_questions
+- **Verify:** `python3 kit/.uak/tests/test_loops_benchmark.py`
+- **Next step:** docs/perf-windows.md
+
+## UAK-101 · (optional) Regression sweep split by feature map entry
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 3 h
+- **Depends on:** UAK-096
+- **Paths:** kit/.uak/skills/maintain-verification-skill/, kit/.uak/tests/test_feature_sweep.py
+- **Acceptance:** the sweep gives one subagent per `features/*.md` within `Max-Parallel-Subagents`, and the report is one line per feature: pass, fail with evidence, or inconclusive
+- **Tests:** sweep_respects_the_subagent_cap, report_has_one_line_per_feature
+- **Verify:** `python3 kit/.uak/tests/test_feature_sweep.py`
+- **Next step:** the live pass of kit/.uak/skills/maintain-verification-skill/SKILL.md
+
+## UAK-102 · (optional) Constraint comments become a check or go away
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** UAK-096
+- **Paths:** kit/.uak/bin/lib/lint.sh, kit/.uak/tests/test_constraint_comments.py, kit/.uak/docs/WHY.md
+- **Acceptance:** `uak lint` warns (never fails) on comments added in the task diff that say "do not remove", "do not change" or "talk to X before changing", and suggests the cheapest test, type or lint that would enforce them, WHY.md cites a case where such a comment was ignored; without one the task is cancelled
+- **Tests:** a_new_constraint_comment_warns, an_old_comment_is_not_reported
+- **Verify:** `python3 kit/.uak/tests/test_constraint_comments.py`
+- **Next step:** the lint entry point in kit/.uak/bin/lib/lint.sh
+
+## UAK-103 · (optional) Statechart of the claims protocol generated from the model
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 3 h
+- **Depends on:** UAK-092
+- **Paths:** scripts/tla_statechart.py, docs/tla/, kit/.uak/tests/test_tla_statechart.py
+- **Acceptance:** a Mermaid statechart of a task's states (AVAILABLE, CLAIMED, REVIEW, INTEGRATED, BLOCKED, CANCELLED) is generated from TLC's state graph, so the picture and the model cannot drift, an invariant violation is drawn as the shortest path in task terms
+- **Tests:** chart_has_every_reachable_task_state, a_violation_is_drawn_as_its_shortest_path
+- **Verify:** `python3 kit/.uak/tests/test_tla_statechart.py`
+- **Next step:** TLC's `-dump dot` output
+
+## UAK-104 · (optional) Short principle names agents can be steered with
+
+- **Type:** docs
+- **Priority:** P2
+- **Estimate:** 1 h
+- **Depends on:** UAK-102
+- **Paths:** kit/.uak/docs/ORCHESTRATION.md, kit/.uak/docs/WHY.md
+- **Acceptance:** at most 8 one-line principles in ORCHESTRATION.md, each with the kit check that enforces it; nothing added to AGENTS.md (100-line budget), WHY.md cites a session where a named principle changed a decision; without one the task is cancelled
+- **Tests:** none (docs-only; kit_lint budget check)
+- **Verify:** `python3 scripts/kit_lint.py`
+- **Next step:** kit/.uak/docs/ORCHESTRATION.md

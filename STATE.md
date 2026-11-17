@@ -1,7 +1,7 @@
 # STATE
 
 Phase: execution
-Updated: 1794895326
+Updated: 1794899463
 AVAILABLE: UAK-088 
 CLAIMED: UAK-087 
 BLOCKED: -
@@ -15,11 +15,11 @@ UAK-901 | REVIEW | jeaneth-hernandez-2 | until 1794981364
 
 Blockers: BLOCKED tasks; use status --task ID --summary.
 Current decisions (last 5):
-- 1794791184 | plan | JoahanMorales/JoahanMorales | tasks added: UAK-085 | Why: backlog without PR (Plan-Channel: claims)
 - 1794869291 | plan | JeanethHernandez/JeanethHernandez | tasks added: UAK-087 UAK-088 | Why: backlog without PR (Plan-Channel: claims)
 - 1794892659 | deadline lease/UAK-087/1794883702 | REQUIRES_RECOVERY | Claim kept; read the summary and use release --expired --read-summary. No work is deleted.
 - 1794892816 | plan | jeaneth-hernandez/jeaneth-hernandez | tasks added: UAK-901 | Why: backlog without PR (Plan-Channel: claims)
 - 1794892832 | plan --amend | jeaneth-hernandez/jeaneth-hernandez | amended: UAK-901 Paths: scripts/visual_reference_eval.py, kit/.uak/tests/test_visual_reference_eval.py, docs/eva
+- 1794899463 | plan | jeaneth-hernandez/jeaneth-hernandez | tasks added: UAK-089 UAK-090 UAK-091 UAK-092 UAK-093 UAK-094 UAK-095 UAK-096 UAK-097 UAK-098 UAK-099 UAK-100 UAK-101 UAK
 
 Global next step: available P0; else review PRs, tests, demo, rehearsal.
 Why: bounded snapshot to resume without rereading history.
