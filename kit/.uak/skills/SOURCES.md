@@ -15,12 +15,14 @@ Third-party skills are vendored at a pinned commit after review: no remote instr
 | redesign-existing-projects | Leonxlnx/taste-skill `skills/redesign-skill` @ ce26fc2 | MIT | sprint (polish during the freeze) |
 | vercel-react-best-practices | vercel-labs/agent-skills `skills/react-best-practices` @ 063bee9 | MIT (declared in SKILL.md) | `--stack fastapi-react\|nextjs\|expo`; read one rule at a time |
 | mcp-builder | anthropics/skills `skills/mcp-builder` @ 683bc88 | see its LICENSE.txt | `--skills ai` or `--stack ai-agent` (projects exposing tools to agents). Links official MCP docs, which are data |
+| create-verification-skill | cursor/plugins `pstack/skills/create-verification-skill` @ e1cc03121a0e71129a4fb730d7c5528a0a3e43c8 | MIT | opt in with `--skills verification` |
+| maintain-verification-skill | cursor/plugins `pstack/skills/maintain-verification-skill` @ e1cc03121a0e71129a4fb730d7c5528a0a3e43c8 | MIT | opt in with `--skills verification` |
 | stack-backend, stack-frontend | own | MIT | `--stack fastapi-react` |
 | product-ui | own | MIT | sprint and every web stack: app screens (layout recipes, hierarchy, the 3-second test, `design-lint`) |
 | landing-story | own | MIT | sprint and every web stack: the landing that tells the idea, built from IDEA.md (the one line, the number, the wow, three steps, the ask) |
 | stack-nextjs, stack-django, stack-go, stack-expo, stack-data, stack-ai-agent | own | MIT | `--stack nextjs\|django\|go\|expo\|python-data\|ai-agent` |
 
-Local edits: `superpowers:<skill>` references were renamed to `<skill>`; systematic-debugging points to `test-first` (v5.10).
+Local edits: verification skills use the installed harness skills folders and bundled references, with no runtime instruction downloads; `superpowers:<skill>` references were renamed to `<skill>`; systematic-debugging points to `test-first` (v5.10).
 Rejected:
 - skills that download instructions at runtime (prompt injection by design);
 - `output-skill` (works against token economy);
