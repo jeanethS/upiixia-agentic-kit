@@ -87,6 +87,7 @@ class TlaCheck(unittest.TestCase):
         self.assertTrue(chart, "a Mermaid stateDiagram-v2 block")
         states = set(re.findall(r"\b([A-Z]{4,})\b", chart.group(1)))
         self.assertEqual(states, {"AVAILABLE", "CLAIMED", "REVIEW", "INTEGRATED"})
+        self.assertNotRegex(chart.group(1), r"\b(\w+) --> \1\b", "an arrow is a change of State")
         for edge in ("AVAILABLE --> CLAIMED", "CLAIMED --> REVIEW", "REVIEW --> INTEGRATED"):
             self.assertIn(edge, chart.group(1))
         self.assertNotIn("INTEGRATED --> ", chart.group(1).replace("INTEGRATED --> [*]", ""),
@@ -96,7 +97,7 @@ class TlaCheck(unittest.TestCase):
         """UAK-103: the broken variant's counterexample (TLC searches breadth-first, so it is a shortest one) is
         drawn step by step in task terms and ends on the invariant it breaks."""
         text = self.statechart()
-        trace = run(str(TLA / "ClaimsBroken.cfg"))
+        trace = run(str(TLA / "ClaimsBroken.cfg"), env={"UAK_TLC_WORKERS": "1"})
         steps = len(re.findall(r"^State \d+: ", trace.stdout, re.M))
         broken = re.search(r"Invariant (\w+) is violated", trace.stdout)
         self.assertTrue(steps > 1 and broken, trace.stdout[-3000:])
