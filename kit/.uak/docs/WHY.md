@@ -16,6 +16,7 @@ Load only the row you need. Every rule cites the incident behind it. Data comes 
 | `uak plan` | 8 PRs only added tasks; 3 merges fell to the human queue for touching TASKS.md. | `test_v3.py` |
 | Parentheses ignored in deps | `Depends on: None (uses mock of HACK-021)` blocked a claim, and it took 2 PRs to fix. | `test_v3.py` |
 | `uak graph` | Wave width and the critical path were checked by eye; lint now fails on cycles and unknown IDs. | `test_v3.py` |
+| `uak lint` enforces `.uak/boundaries` against import edges, with dated exceptions for existing pairs | Design source, not a recorded kit incident: poteto's "All Code Is Slop" talk, architecture-enforcement rung; pstack's `/correct` rule-to-enforcer ladder. Dependency rules need an executable check to prevent new violations. | `test_boundaries.py` |
 | §4.2 Bounded inner loop | Agents retried the same failing approach. Two identical failures means stop and escalate. | `test_v3.py` |
 | §4.3 `&&`, never `;` | Two contract messages carried a stale SHA because a failed commit (ruff) didn't stop the chain. | judgment |
 | §4.6 Reduced motion in UI checks | With software WebGL, animations took 3–6 s, and "failures" were unfinished animations. | judgment |

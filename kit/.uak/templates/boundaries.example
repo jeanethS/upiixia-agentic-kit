@@ -1,0 +1,7 @@
+# Copy to .uak/boundaries. Shell case globs match repository-relative import paths.
+# FROM_GLOB !-> TO_GLOB  reason
+src/ui/* !-> src/db/*  UI must use the service layer
+src/domain/* !-> src/ui/*  Domain code must not depend on UI
+src/domain/* !-> src/infrastructure/*  Infrastructure implements domain interfaces
+# Allow an existing file pair with its recording date and migration reason.
+allow src/ui/legacy.py -> src/db/client.py since 2026-01-01  Legacy import awaiting migration
