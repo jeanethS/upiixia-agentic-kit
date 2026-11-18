@@ -245,3 +245,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Tests:** scores_paired_real_captures, refuses_missing_or_synthetic_captures, refuses_invalid_or_unpaired_scores, preserves_unknown_token_usage
 - **Verify:** `python3 kit/.uak/tests/test_visual_reference_eval.py`
 - **Next step:** write the four assertions against a minimal JSON manifest before implementing the evaluator
+## UAK-098 · Decide whether claims writers can publish separate files (ADR from the model)
+
+- **Type:** spike
+- **Priority:** P2
+- **Estimate:** 4 h
+- **Depends on:** UAK-092
+- **Paths:** docs/tla/, docs/adr/, scripts/tla_check.sh, kit/.uak/tests/test_tla_check.py
+- **Acceptance:** a variant of the model where each agent writes only its own file and state is merged on read either keeps the invariants of UAK-092 or yields a counterexample, an ADR (Context, Decision, Consequences, Status) records the result and the Reap retry numbers it would change; no engine change in this task
+- **Tests:** the_per_agent_variant_is_checked (TLC runs ClaimsPerAgent.cfg to the end, and the ADR records the outcome TLC actually gives)
+- **Verify:** `python3 kit/.uak/tests/test_tla_check.py`
+- **Next step:** the shared files the claims branch writes, listed in docs/ARCHITECTURE.md
+
