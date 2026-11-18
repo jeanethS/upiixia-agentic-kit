@@ -29,6 +29,9 @@ fi
 meta=$(mktemp -d)
 trap 'rm -rf "$meta"' EXIT
 cd "$(dirname "$cfg")"
+# X.cfg checks X.tla when it exists (ClaimsPerAgent.cfg); variants of the main model (ClaimsBroken.cfg) check Claims.tla.
+spec=$(basename "$cfg" .cfg).tla
+[ -f "$spec" ] || spec=Claims.tla
 # -deadlock: a finished run (clock at MaxTime, budgets spent) is not an error.
 "${JAVA:-java}" -XX:+UseParallelGC -cp "$jar" tlc2.TLC -deadlock -workers auto -metadir "$meta" \
-  -config "$(basename "$cfg")" Claims.tla
+  -config "$(basename "$cfg")" "$spec"
