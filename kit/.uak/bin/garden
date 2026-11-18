@@ -115,7 +115,8 @@ printf '\nREPEATS (black box lines seen 2 or more times)\n'
     git ls-tree -r --name-only "$ref" -- blackbox/ 2>/dev/null | while IFS= read -r b; do git show "$ref:$b" 2>/dev/null; done
     break
   done; } | awk -F' [|] ' '/^- / && NF >= 8 && $6 != "usage" { t = $6 " · " $7 " · " $8; gsub(/[0-9]+/, "N", t); print substr(t, 1, 120) }' | sort | uniq -c | sort -rn |
-  awk '$1 >= 2' | head -n 8 > "$tmp/repeats"
+  awk '$1 >= 2' > "$tmp/bb-all"
+head -n 8 "$tmp/bb-all" > "$tmp/repeats"
 if [ -s "$tmp/repeats" ]; then sed 's/^ */  ×/' "$tmp/repeats"; else note "none"; fi
 
 # 6. Corrections: what a human had to tell an agent more than once is a rule the harness lacks. Better a check
@@ -138,10 +139,65 @@ for p in $prefixes; do for d in "$projects/$p" "$projects/$p"-wt-*; do
 done; done
 grep -Eiv '^(<|\[|caveat:|this session is being continued)' "$tmp/corr" |
   grep -Ei '^(no[ ,.!]|nope|wrong|that.s not|don.t|do not|stop|never|again|otra vez|te dije|ya te dije|no hagas|no uses|deja de|está mal|esta mal|así no|asi no|eso no|por qu[eé] (hiciste|cambiaste|borraste|quitaste)|why did you|you (broke|deleted|removed|skipped)|rompiste|borraste)' |
-  cut_ 160 | sort | uniq -c | sort -rn | head -n 12 > "$tmp/corr-top"
+  cut_ 160 | sort | uniq -c | sort -rn > "$tmp/corr-all"
+head -n 12 "$tmp/corr-all" > "$tmp/corr-top"
 if [ -s "$tmp/corr-top" ]; then
   sed 's/^ *\([0-9]*\) /  ×\1 /' "$tmp/corr-top"
   note "→ each repeated one: a check (guard rule, lint, gate, test) beats a line in AGENTS.md; a trap on some paths: uak learn"
 else note "none found (Claude Code transcripts of this repository, last $days days)"; fi
+
+# 7. Match judgment-only rules to repeated evidence; two distinct shared words beyond stop words are a candidate.
+printf '\nRULES WITHOUT A CHECK\n'
+if [ -f .uak/docs/WHY.md ]; then
+  awk '
+    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+    function words(s) { s = tolower(s); gsub(/[^a-z0-9]+/, " ", s); return " " s " " }
+    FILENAME != ARGV[3] {
+      if ($1 >= 2) {
+        sub(/^[[:space:]]*[0-9]+[[:space:]]+/, "")
+        sub(/^.* · /, "")   # black box keys are "class · status · text": only the text is evidence
+        past[++count] = $0; normalized[count] = words($0)
+      }
+      next
+    }
+    !/^[[:space:]]*\|/ { rule = enforced = 0; next }
+    {
+      row = trim($0); sub(/^\|/, "", row); sub(/\|$/, "", row)
+      gsub(/\\\|/, "\034", row)
+      n = split(row, cells, /\|/)
+      header = by = 0
+      for (i = 1; i <= n; i++) {
+        gsub(/\034/, "|", cells[i]); cells[i] = trim(cells[i])
+        if (cells[i] == "Rule") header = i
+        if (cells[i] == "Enforced by") by = i
+      }
+      if (header && by) { rule = header; enforced = by; next }
+      if (!rule || !enforced || tolower(cells[enforced]) != "judgment") next
+      # Only the words of the rule itself: incident text names tasks, agents and paths, which every line shares.
+      text = words(cells[rule])
+      # Keyword priority picks the highest candidate level, from structure down to documentation.
+      level = "doc"
+      if (text ~ / (imports?|layers?|depends) /) level = "architecture"
+      else if (text ~ / (types?|schemas?|null) /) level = "type"
+      else if (text ~ / (style|format|names?|forbid|forbidden) /) level = "lint"
+      else if (text ~ / (behaves|returns|fails|regressions?) /) level = "test"
+      for (j = 1; j <= count; j++) {
+        split(text, tokens, / +/); overlap = 0; seen = " "
+        for (k in tokens) {
+          word = tokens[k]
+          if (length(word) < 3 || word ~ /^(the|and|not|never|with|that|this|for|from|are|was|its|only|again|uak|agent|agents|task|tasks|merge|merged|path|paths|claim|claims|file|files|done)$/) continue
+          if (index(seen, " " word " ")) continue
+          seen = seen word " "
+          if (index(normalized[j], " " word " ")) overlap++
+        }
+        if (overlap >= 2) {
+          printf "  %s | candidate: %s | past instance: %s\n", cells[rule], level, past[j]
+          found = 1; break
+        }
+      }
+    }
+    END { if (!found) print "  none" }
+  ' "$tmp/corr-all" "$tmp/bb-all" .uak/docs/WHY.md
+else note "none (no .uak/docs/WHY.md)"; fi
 
 printf '\nGARDEN: %s item(s) to prune. Prune before you add; after a big change, run the suite and this again.\n' "$prune"
