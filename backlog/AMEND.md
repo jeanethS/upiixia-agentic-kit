@@ -269,3 +269,14 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Verify:** `python3 kit/.uak/tests/test_tla_check.py`
 - **Next step:** the shared files the claims branch writes, listed in docs/ARCHITECTURE.md
 
+## UAK-103 · (optional) Statechart of the claims protocol generated from the model
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 3 h
+- **Depends on:** UAK-092
+- **Paths:** scripts/tla_statechart.py, scripts/tla_check.sh, docs/tla/, kit/.uak/tests/test_tla_check.py
+- **Acceptance:** a Mermaid statechart of the task states the model reaches is generated from TLC's state graph and committed; the test regenerates it, so the picture and the model cannot drift (BLOCKED and CANCELLED are not in the model, docs/tla/README.md says so), an invariant violation is drawn as its shortest path in task terms (TLC's breadth-first trace of ClaimsBroken.cfg), the tests live in test_tla_check.py so the tla workflow runs them with no workflow change
+- **Tests:** chart_has_every_reachable_task_state, a_violation_is_drawn_as_its_shortest_path
+- **Verify:** `python3 kit/.uak/tests/test_tla_check.py`
+- **Next step:** TLC's `-dump dot,actionlabels` output
