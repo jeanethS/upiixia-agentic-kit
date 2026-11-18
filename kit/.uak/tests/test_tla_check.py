@@ -48,6 +48,21 @@ class TlaCheck(unittest.TestCase):
         self.assertRegex(out.stdout, r"Invariant \w+ is violated")
         self.assertIn("State 1:", out.stdout, "TLC prints the counterexample trace")
 
+    def test_the_per_agent_variant_is_checked(self):
+        """UAK-098: the ADR on per-agent claim files records the outcome TLC actually gives for that variant."""
+        adr = REPO / "docs" / "adr" / "0001-claims-per-agent-files.md"
+        self.assertTrue((TLA / "ClaimsPerAgent.tla").is_file() and adr.is_file(),
+                        "docs/tla/ClaimsPerAgent.tla and docs/adr/0001-claims-per-agent-files.md must exist")
+        recorded = re.search(r"^TLC result: (no error|(\w+) is violated)$", adr.read_text(encoding="utf-8"), re.M)
+        self.assertTrue(recorded, "the ADR states 'TLC result: no error' or 'TLC result: NAME is violated'")
+        out = self.model_run("ClaimsPerAgent.cfg")
+        if recorded.group(1) == "no error":
+            self.assertEqual(out.returncode, 0, out.stdout[-3000:])
+            self.assertIn("No error has been found", out.stdout)
+        else:
+            self.assertNotEqual(out.returncode, 0, out.stdout[-3000:])
+            self.assertIn("Invariant %s is violated" % recorded.group(2), out.stdout)
+
     def test_the_jar_is_pinned_by_hash(self):
         text = SCRIPT.read_text(encoding="utf-8")
         version = re.search(r'^TLA_VERSION=([0-9][0-9.]*)$', text, re.M)
