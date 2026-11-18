@@ -14,7 +14,7 @@ from test_hack import Runner, resolve_binary
 
 RULE = "src/ui/* !-> src/db/*  UI must use the service layer\n"
 EXCEPTION = "allow src/ui/x.py -> src/db/y.py since 2026-01-01  Legacy import awaiting migration\n"
-IMPORTER = '"""UI entry point."""\n\nfrom src.db.y import load\n\ndef render():\n    return load()\n'
+IMPORTER = '"""UI entry point; storage lives in src.db.y."""\n\nfrom src.db.y import load\n\ndef render():\n    return load()\n'
 
 
 def uak(r, c, *args):

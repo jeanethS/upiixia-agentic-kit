@@ -178,10 +178,13 @@ lint_boundaries() {
         END { exit !found }
       ' "$rules"; then continue; fi
       stem=${imported%.*}
-      line=$(grep -nF -e "$stem" -e "${stem//\//.}" -- "$ROOT/$importer" 2>/dev/null | sed -n '1s/:.*//p')
+      # First import-looking line naming the module; a bare substring elsewhere (a comment, a word) does not count.
+      line=$(grep -nF -e "$stem" -e "${stem//\//.}" -- "$ROOT/$importer" 2>/dev/null |
+        grep -E '^[0-9]+:.*(import|require|from |include|use )' | sed -n '1s/:.*//p')
       if [ -z "$line" ]; then
         stem=${stem##*/}
-        line=$(grep -nF -- "$stem" "$ROOT/$importer" 2>/dev/null | sed -n '1s/:.*//p')
+        line=$(grep -nF -- "$stem" "$ROOT/$importer" 2>/dev/null |
+          grep -E '^[0-9]+:.*(import|require|from |include|use )' | sed -n '1s/:.*//p')
       fi
       marker=
       if [ -z "$line" ]; then line=1; marker=' [line unavailable: import stem not found]'; fi
