@@ -63,6 +63,49 @@ class TlaCheck(unittest.TestCase):
             self.assertNotEqual(out.returncode, 0, out.stdout[-3000:])
             self.assertIn("Invariant %s is violated" % recorded.group(2), out.stdout)
 
+    def statechart(self):
+        if os.environ.get("UAK_TLA") != "1":
+            self.skipTest("TLC needs Java and the pinned jar: the tla workflow runs it (UAK_TLA=1)")
+        with tempfile.TemporaryDirectory() as out:
+            path = Path(out) / "statechart.md"
+            gen = subprocess.run([sys.executable, str(REPO / "scripts" / "tla_statechart.py"), "--out", str(path)],
+                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True,
+                                 timeout=900)
+            self.assertEqual(gen.returncode, 0, gen.stdout[-3000:])
+            text = path.read_text(encoding="utf-8")
+        committed = TLA / "statechart.md"
+        self.assertTrue(committed.is_file(), "docs/tla/statechart.md is committed")
+        self.assertEqual(committed.read_text(encoding="utf-8"), text,
+                         "docs/tla/statechart.md is stale: run python3 scripts/tla_statechart.py")
+        return text
+
+    def test_chart_has_every_reachable_task_state(self):
+        """UAK-103: the chart is TLC's state graph projected on one task, so it shows every state the model
+        reaches and nothing else."""
+        text = self.statechart()
+        chart = re.search(r"```mermaid\nstateDiagram-v2\n(.*?)```", text, re.S)
+        self.assertTrue(chart, "a Mermaid stateDiagram-v2 block")
+        states = set(re.findall(r"\b([A-Z]{4,})\b", chart.group(1)))
+        self.assertEqual(states, {"AVAILABLE", "CLAIMED", "REVIEW", "INTEGRATED"})
+        self.assertNotRegex(chart.group(1), r"\b(\w+) --> \1\b", "an arrow is a change of State")
+        for edge in ("AVAILABLE --> CLAIMED", "CLAIMED --> REVIEW", "REVIEW --> INTEGRATED"):
+            self.assertIn(edge, chart.group(1))
+        self.assertNotIn("INTEGRATED --> ", chart.group(1).replace("INTEGRATED --> [*]", ""),
+                         "INTEGRATED is final")
+
+    def test_a_violation_is_drawn_as_its_shortest_path(self):
+        """UAK-103: the broken variant's counterexample (TLC searches breadth-first, so it is a shortest one) is
+        drawn step by step in task terms and ends on the invariant it breaks."""
+        text = self.statechart()
+        trace = run(str(TLA / "ClaimsBroken.cfg"), env={"UAK_TLC_WORKERS": "1"})
+        steps = len(re.findall(r"^State \d+: ", trace.stdout, re.M))
+        broken = re.search(r"Invariant (\w+) is violated", trace.stdout)
+        self.assertTrue(steps > 1 and broken, trace.stdout[-3000:])
+        path = re.search(r"```mermaid\nflowchart LR\n(.*?)```", text, re.S)
+        self.assertTrue(path, "a Mermaid flowchart block for the counterexample")
+        self.assertEqual(len(re.findall(r" -->\|", path.group(1))), steps - 1, "one arrow per TLC step")
+        self.assertIn(broken.group(1), path.group(1))
+
     def test_the_jar_is_pinned_by_hash(self):
         text = SCRIPT.read_text(encoding="utf-8")
         version = re.search(r'^TLA_VERSION=([0-9][0-9.]*)$', text, re.M)

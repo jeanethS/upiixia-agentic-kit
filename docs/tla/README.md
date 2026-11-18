@@ -8,6 +8,7 @@ Run it with `bash scripts/tla_check.sh [CFG]` (needs Java; the script downloads 
 |---|---|
 | `Claims.cfg` | no error |
 | `ClaimsBroken.cfg` | a counterexample: with `CheckTip = FALSE` a push overwrites the tip, and two agents claim the same task from stale clones |
+| `ClaimsChart.cfg` | the smallest instance (one task, two agents) that `scripts/tla_statechart.py` draws into `statechart.md` |
 | `ClaimsPerAgent.cfg` | a counterexample (`HolderIsOwner`): per-agent claim files merged on read, the design rejected in `docs/adr/0001-claims-per-agent-files.md` |
 
 ## What it checks

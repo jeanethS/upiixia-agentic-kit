@@ -33,5 +33,7 @@ cd "$(dirname "$cfg")"
 spec=$(basename "$cfg" .cfg).tla
 [ -f "$spec" ] || spec=Claims.tla
 # -deadlock: a finished run (clock at MaxTime, budgets spent) is not an error.
-"${JAVA:-java}" -XX:+UseParallelGC -cp "$jar" tlc2.TLC -deadlock -workers auto -metadir "$meta" \
-  -config "$(basename "$cfg")" "$spec"
+# UAK_TLC_WORKERS=1 makes the run (and its counterexample) deterministic; UAK_TLC_ARGS adds options such as -dump.
+# shellcheck disable=SC2086
+"${JAVA:-java}" -XX:+UseParallelGC -cp "$jar" tlc2.TLC -deadlock -workers "${UAK_TLC_WORKERS:-auto}" -metadir "$meta" \
+  ${UAK_TLC_ARGS:-} -config "$(basename "$cfg")" "$spec"
