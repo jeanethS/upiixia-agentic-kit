@@ -109,10 +109,13 @@ class GardenCandidates(unittest.TestCase):
         # keyword must be a whole word ("important" is not "import").
         with open(self.repo / ".uak/docs/WHY.md", "a", encoding="utf-8") as why:
             why.write("| Leave friction alone once done | nothing | judgment |\n"
-                      "| Never invent important DOIs | x | judgment |\n")
+                      "| Never invent important DOIs | x | judgment |\n"
+                      "| Pin the toolchain | an agent tried to invent DOIs | judgment |\n")
         self.seed_evidence("blackbox")
         section = self.candidates(self.garden())
         self.assertNotIn("Leave friction alone", section)
+        # kit-r1 on UAK-095: words from the incident cell matched unrelated lines; only the rule cell counts.
+        self.assertNotIn("Pin the toolchain", section)
         self.assertRegex(section, r"Never invent important DOIs \| candidate: doc \|")
 
     def snapshot(self):

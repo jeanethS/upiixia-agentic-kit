@@ -173,9 +173,8 @@ if [ -f .uak/docs/WHY.md ]; then
       }
       if (header && by) { rule = header; enforced = by; next }
       if (!rule || !enforced || tolower(cells[enforced]) != "judgment") next
-      text = ""
-      for (i = 1; i <= n; i++) if (i != enforced) text = text " " cells[i]
-      text = words(text)
+      # Only the words of the rule itself: incident text names tasks, agents and paths, which every line shares.
+      text = words(cells[rule])
       # Keyword priority picks the highest candidate level, from structure down to documentation.
       level = "doc"
       if (text ~ / (imports?|layers?|depends) /) level = "architecture"
@@ -186,7 +185,7 @@ if [ -f .uak/docs/WHY.md ]; then
         split(text, tokens, / +/); overlap = 0; seen = " "
         for (k in tokens) {
           word = tokens[k]
-          if (length(word) < 3 || word ~ /^(the|and|not|never|with|that|this|for|from|are|was|its|only|again)$/) continue
+          if (length(word) < 3 || word ~ /^(the|and|not|never|with|that|this|for|from|are|was|its|only|again|uak|agent|agents|task|tasks|merge|merged|path|paths|claim|claims|file|files|done)$/) continue
           if (index(seen, " " word " ")) continue
           seen = seen word " "
           if (index(normalized[j], " " word " ")) overlap++
