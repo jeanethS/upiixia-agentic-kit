@@ -2,12 +2,13 @@
 
 `Claims.tla` models what every `uak` command does to the claims branch: clone it (`fresh_state` in `kit/.uak/bin/lib/tx.sh`), apply one mutation, push. Git refuses the push when the remote tip moved, and the command retries from a fresh clone. One TLA+ step that changes shared state is one push in the code.
 
-Run it with `bash scripts/tla_check.sh` (needs Java; the script downloads tla2tools.jar, pinned by version and SHA-256). The `tla` workflow runs it when this folder, `tx.sh` or `claim.sh` change.
+Run it with `bash scripts/tla_check.sh [CFG]` (needs Java; the script downloads tla2tools.jar, pinned by version and SHA-256). `X.cfg` checks `X.tla` when it exists, else `Claims.tla`. The `tla` workflow runs it when this folder, `tx.sh`, `claim.sh`, `done.sh`, the script, its test or the workflow change.
 
 | Config | Expected |
 |---|---|
 | `Claims.cfg` | no error |
 | `ClaimsBroken.cfg` | a counterexample: with `CheckTip = FALSE` a push overwrites the tip, and two agents claim the same task from stale clones |
+| `ClaimsPerAgent.cfg` | a counterexample (`HolderIsOwner`): per-agent claim files merged on read, the design rejected in `docs/adr/0001-claims-per-agent-files.md` |
 
 ## What it checks
 
@@ -26,6 +27,7 @@ Run it with `bash scripts/tla_check.sh` (needs Java; the script downloads tla2to
 - Retry limits: a failed push is just a later fetch and push.
 - Handover, which moves `Owner` inside REVIEW by design, and commands outside the claim lifecycle (messages, checkpoints, reviews, plan), BLOCKED and CANCELLED. Review approval before integrate is assumed.
 - Paths overlap and dependencies in `check_collisions`.
+- `integrate_mutate` also records CLAIMED, BLOCKED or AVAILABLE tasks merged outside the gate (owner or human); the model integrates only from REVIEW.
 - The owner's view after someone else integrates its task: its lease belief stays, which no invariant reads.
 - The tip check compares contents. Git compares commits, so it also refuses a tip that moved and came back; the retry lands on the same contents, so the outcomes match.
 
