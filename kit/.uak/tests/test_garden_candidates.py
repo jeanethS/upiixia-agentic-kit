@@ -14,7 +14,7 @@ import unittest
 
 PACKAGE = Path(__file__).resolve().parents[2]
 TESTS = ("a_repeated_judgment_rule_is_listed", "a_rule_with_a_check_is_not_listed",
-         "garden_writes_nothing")
+         "garden_writes_nothing", "only_the_message_words_count")
 CORRECTION = "no, do not invent DOIs"
 RULE = "Never invent DOIs"
 CHECKED_RULE = "Never delete regression tests"
@@ -103,6 +103,17 @@ class GardenCandidates(unittest.TestCase):
         self.assertIn(RULE, section)
         self.assertNotIn(CHECKED_RULE, section)
         self.assertNotIn(CHECKED_CORRECTION, section)
+
+    def only_the_message_words_count(self):
+        # Review of UAK-095: the black box class and status ("friction", "done") are not evidence, and a level
+        # keyword must be a whole word ("important" is not "import").
+        with open(self.repo / ".uak/docs/WHY.md", "a", encoding="utf-8") as why:
+            why.write("| Leave friction alone once done | nothing | judgment |\n"
+                      "| Never invent important DOIs | x | judgment |\n")
+        self.seed_evidence("blackbox")
+        section = self.candidates(self.garden())
+        self.assertNotIn("Leave friction alone", section)
+        self.assertRegex(section, r"Never invent important DOIs \| candidate: doc \|")
 
     def snapshot(self):
         project = {}

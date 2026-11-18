@@ -155,6 +155,7 @@ if [ -f .uak/docs/WHY.md ]; then
     FILENAME != ARGV[3] {
       if ($1 >= 2) {
         sub(/^[[:space:]]*[0-9]+[[:space:]]+/, "")
+        sub(/^.* · /, "")   # black box keys are "class · status · text": only the text is evidence
         past[++count] = $0; normalized[count] = words($0)
       }
       next
@@ -164,26 +165,23 @@ if [ -f .uak/docs/WHY.md ]; then
       row = trim($0); sub(/^\|/, "", row); sub(/\|$/, "", row)
       gsub(/\\\|/, "\034", row)
       n = split(row, cells, /\|/)
-      header = 0
+      header = by = 0
       for (i = 1; i <= n; i++) {
         gsub(/\034/, "|", cells[i]); cells[i] = trim(cells[i])
         if (cells[i] == "Rule") header = i
+        if (cells[i] == "Enforced by") by = i
       }
-      if (header) {
-        rule = header; enforced = 0
-        for (i = 1; i <= n; i++) if (cells[i] == "Enforced by") enforced = i
-        next
-      }
+      if (header && by) { rule = header; enforced = by; next }
       if (!rule || !enforced || tolower(cells[enforced]) != "judgment") next
       text = ""
       for (i = 1; i <= n; i++) if (i != enforced) text = text " " cells[i]
       text = words(text)
       # Keyword priority picks the highest candidate level, from structure down to documentation.
       level = "doc"
-      if (text ~ /import|layer|depends/) level = "architecture"
-      else if (text ~ /type|schema|null/) level = "type"
-      else if (text ~ /style|format|name|forbid/) level = "lint"
-      else if (text ~ /behaves|returns|fails|regression/) level = "test"
+      if (text ~ / (imports?|layers?|depends) /) level = "architecture"
+      else if (text ~ / (types?|schemas?|null) /) level = "type"
+      else if (text ~ / (style|format|names?|forbid|forbidden) /) level = "lint"
+      else if (text ~ / (behaves|returns|fails|regressions?) /) level = "test"
       for (j = 1; j <= count; j++) {
         split(text, tokens, / +/); overlap = 0; seen = " "
         for (k in tokens) {
