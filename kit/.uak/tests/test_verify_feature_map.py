@@ -50,7 +50,26 @@ def an_existing_feature_file_passes(r):
     return "creating the feature map clears its diagnostic"
 
 
-TESTS = [a_missing_feature_file_fails_lint, an_existing_feature_file_passes]
+def only_a_features_path_counts(r):
+    # Grok on UAK-096: notfeatures/x.md and features/x.md.bak are not feature map entries; an absolute path that
+    # exists is one.
+    c = project(r, "verify-feature-lookalikes")
+    tasks = c / ".uak/TASKS.md"
+    feature = c / ".claude/skills/verify-app/features/checkout.md"
+    feature.parent.mkdir(parents=True)
+    feature.write_text("# Checkout\n", encoding="utf-8")
+    tasks.write_text(tasks.read_text(encoding="utf-8").replace(
+        "`bash .claude/skills/verify-app/run.sh features/checkout.md`",
+        "`test -f docs/notfeatures/overview.md && test -f build/features/old.md.bak && cat %s`" % feature),
+        encoding="utf-8")
+    out = uak(r, c, "lint")
+    text = out.stdout + out.stderr
+    for word in ("features/overview.md", "features/old.md", "features/checkout.md"):
+        assert word not in text, "%s is not a missing feature map entry: %s" % (word, text)
+    return "look-alike paths ignored, an absolute existing path accepted"
+
+
+TESTS = [a_missing_feature_file_fails_lint, an_existing_feature_file_passes, only_a_features_path_counts]
 
 
 def main():

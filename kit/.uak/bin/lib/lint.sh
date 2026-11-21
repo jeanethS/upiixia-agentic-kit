@@ -60,16 +60,17 @@ lint_verify_features() {
   local id v feature name path found
   for id in $(awk '/^## [A-Z][A-Z0-9]*-[0-9]/ {print $2}' "$BACKLOG"); do
     v=$(ID=$id task_field Verify); [ -n "$v" ] || continue
-    for feature in $(printf '%s\n' "$v" | grep -oE '[A-Za-z0-9._/-]*features/[A-Za-z0-9._-]+\.md' || :); do
+    # A whole word that is features/NAME.md or ends in /features/NAME.md (not notfeatures/, not NAME.md.bak).
+    for feature in $(printf '%s\n' "$v" | tr -s ' \t"'"'"'`=;&|()' '\n' |
+                     grep -E '^([A-Za-z0-9._/-]*/)?features/[A-Za-z0-9._-]+\.md$' || :); do
       name=${feature##*/}
       found=no
-      case "$feature" in
-        *skills/*) [ ! -f "$ROOT/$feature" ] || found=yes;;
-        *)
-          for path in "$ROOT"/.claude/skills/verify-*/features/"$name" "$ROOT"/.agents/skills/verify-*/features/"$name"; do
-            if [ -f "$path" ]; then found=yes; break; fi
-          done;;
-      esac
+      case "$feature" in /*) path=$feature;; *) path=$ROOT/$feature;; esac
+      [ ! -f "$path" ] || found=yes
+      for path in "$ROOT"/.claude/skills/verify-*/features/"$name" "$ROOT"/.agents/skills/verify-*/features/"$name"; do
+        [ "$found" = no ] || break
+        [ ! -f "$path" ] || found=yes
+      done
       if [ "$found" = no ]; then
         say "LINT: $id Verify names features/$name, which no verify skill has (.claude/skills/verify-*/features/ or .agents/skills/verify-*/features/): create it with the create-verification-skill skill or fix the Verify" >&2
         LINT_ERRORS=$((LINT_ERRORS + 1))
