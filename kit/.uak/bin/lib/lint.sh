@@ -149,6 +149,50 @@ lint_verify_scaffold() {
     done
   done
 }
+lint_boundaries() {
+  local rules="$ROOT/.uak/boundaries" mapdir from arrow to reason importer imported stem line marker
+  [ -f "$rules" ] || return 0
+  if ! (cd "$ROOT" && bash "$UAK_BIN/map" build) > "$TXROOT/lint-boundaries-map" 2>&1; then
+    say "LINT: boundaries: cannot build the import map" >&2
+    cat "$TXROOT/lint-boundaries-map" >&2
+    LINT_ERRORS=$((LINT_ERRORS + 1)); return 0
+  fi
+  mapdir=$(git -C "$ROOT" rev-parse --absolute-git-dir)/uak-map
+  [ -f "$mapdir/edges.tsv" ] || {
+    say "LINT: boundaries: import map has no edges.tsv" >&2
+    LINT_ERRORS=$((LINT_ERRORS + 1)); return 0
+  }
+  while read -r from arrow to reason || [ -n "$from" ]; do
+    case "$from" in ''|\#*|allow) continue;; esac
+    if [ "$arrow" != '!->' ] || [ -z "$to" ] || [ -z "$reason" ]; then
+      say "LINT: boundaries: expected FROM_GLOB !-> TO_GLOB reason: $from $arrow $to $reason" >&2
+      LINT_ERRORS=$((LINT_ERRORS + 1)); continue
+    fi
+    while IFS="$(printf '\t')" read -r importer imported; do
+      case "$importer" in $from) ;; *) continue;; esac
+      case "$imported" in $to) ;; *) continue;; esac
+      # Exceptions name one existing edge; a dated pair never exempts a new importer.
+      if awk -v src="$importer" -v dst="$imported" '
+        $1 == "allow" && $2 == src && $3 == "->" && $4 == dst && $5 == "since" &&
+        $6 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ && NF >= 7 { found = 1 }
+        END { exit !found }
+      ' "$rules"; then continue; fi
+      stem=${imported%.*}
+      # First import-looking line naming the module; a bare substring elsewhere (a comment, a word) does not count.
+      line=$(grep -nF -e "$stem" -e "${stem//\//.}" -- "$ROOT/$importer" 2>/dev/null |
+        grep -E '^[0-9]+:.*(import|require|from |include|use )' | sed -n '1s/:.*//p')
+      if [ -z "$line" ]; then
+        stem=${stem##*/}
+        line=$(grep -nF -- "$stem" "$ROOT/$importer" 2>/dev/null |
+          grep -E '^[0-9]+:.*(import|require|from |include|use )' | sed -n '1s/:.*//p')
+      fi
+      marker=
+      if [ -z "$line" ]; then line=1; marker=' [line unavailable: import stem not found]'; fi
+      say "LINT: boundary: $importer:$line -> $imported: $reason$marker" >&2
+      LINT_ERRORS=$((LINT_ERRORS + 1))
+    done < "$mapdir/edges.tsv"
+  done < "$rules"
+}
 budget() {
   [ -f "$1" ] || { say "LINT: missing $1" >&2; LINT_ERRORS=$((LINT_ERRORS + 1)); return; }
   lines=$(awk 'END {print NR+0}' "$1"); words=$(awk '{n+=NF} END {print n+0}' "$1")
@@ -239,6 +283,7 @@ EOF_OC
   lint_tests_named
   lint_paths_hint
   lint_design
+  lint_boundaries
   # sprint without a freeze = features until the last minute (Hack-Nation: 8 PRs, incl. a product rename, in the last 6 h).
   if [ -f "$ROOT/.uak/PROJECT.md" ] && case "$(uak_cfg "$ROOT/.uak/PROJECT.md" Mode)" in sprint*) true;; *) false;; esac &&
      case "$(uak_cfg "$ROOT/.uak/PROJECT.md" Freeze-Epoch)" in [1-9]*) false;; *) true;; esac; then
