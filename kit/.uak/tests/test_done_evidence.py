@@ -3,6 +3,7 @@
 import argparse
 import concurrent.futures
 import json
+import subprocess
 import tempfile
 import time
 from pathlib import Path
@@ -57,7 +58,8 @@ def prose_evidence_still_passes(r):
 def numbers_and_ranges_are_not_false_pointers(r):
     # Review of UAK-097: a count like "6434945 states" is not a SHA, and file:N-M is a range, not a path.
     f = ready(r, "done-evidence-range")
-    out = done(f, "6434945 states, no error at 12:30 over HTTP/1.1; checked \"src/app.py\" and src/app.py:1-1")
+    out = done(f, "6434945 states, no error at 12:30 over HTTP/1.1 on 127.0.0.1:4173, log in /tmp/smoke.log; "
+                  "checked \"src/app.py\" and src/app.py:1-1")
     data = json.loads(out.stdout)
     expect(out.returncode == 0 and data["state"] == "REVIEW", out.stdout + out.stderr)
 
@@ -71,8 +73,19 @@ def a_bad_range_or_column_pointer_is_refused(r):
     expect("src/app.py:999:1" in data["message"] and "src/app.py:999-1" in data["message"], out.stdout)
 
 
+def a_commit_off_the_branch_is_accepted(r):
+    # kit-r1 on UAK-097: evidence cites a combined CI merge or a sibling task's commit; a real commit is not invented.
+    f = ready(r, "done-evidence-other-commit")
+    side = subprocess.run(["git", "commit-tree", "HEAD^{tree}", "-m", "elsewhere"], cwd=str(f.worktrees[0]),
+                          stdout=subprocess.PIPE, universal_newlines=True, check=True).stdout.strip()
+    out = done(f, "CI ran on the combined merge %s" % side[:7])
+    data = json.loads(out.stdout)
+    expect(out.returncode == 0 and data["state"] == "REVIEW", out.stdout + out.stderr)
+
+
 TESTS = [a_missing_sha_is_refused, a_file_line_past_the_end_is_refused, prose_evidence_still_passes,
-         numbers_and_ranges_are_not_false_pointers, a_bad_range_or_column_pointer_is_refused]
+         numbers_and_ranges_are_not_false_pointers, a_bad_range_or_column_pointer_is_refused,
+         a_commit_off_the_branch_is_accepted]
 
 
 def main():
