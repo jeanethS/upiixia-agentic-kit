@@ -280,3 +280,15 @@ Append-only; the last section of an ID replaces its section in the backlog. Why:
 - **Tests:** chart_has_every_reachable_task_state, a_violation_is_drawn_as_its_shortest_path
 - **Verify:** `python3 kit/.uak/tests/test_tla_check.py`
 - **Next step:** TLC's `-dump dot,actionlabels` output
+## UAK-097 · uak done checks that the evidence exists
+
+- **Type:** feature
+- **Priority:** P2
+- **Estimate:** 2 h
+- **Depends on:** UAK-094
+- **Paths:** kit/.uak/bin/lib/done.sh, kit/.uak/tests/test_done_evidence.py, kit/.uak/docs/CLI.md, kit/.uak/docs/WHY.md
+- **Acceptance:** every commit SHA in `--evidence` must be a commit in the repository (evidence may cite a combined CI run or a sibling task), and every `file:line` and repo-relative path must exist at the task tip; otherwise `done` refuses with `UAK_CODE=evidence-missing` naming the pointer, free text with no pointer keeps working, the new code has a CLI.md Result codes row and a WHY.md row
+- **Tests:** a_missing_sha_is_refused, a_file_line_past_the_end_is_refused, prose_evidence_still_passes
+- **Verify:** `python3 kit/.uak/tests/test_done_evidence.py`
+- **Next step:** EVIDENCE is assembled at kit/.uak/bin/lib/done.sh:37-92
+

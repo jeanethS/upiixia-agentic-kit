@@ -100,3 +100,4 @@ Why: a reversible option after 15 min keeps work moving.
 - 1794983535 | plan --amend | jeaneth-hernandez/jeaneth-hernandez | amended: UAK-098 Paths: docs/tla/, docs/adr/ → docs/tla/, docs/adr/, scripts/tla_check.sh, kit/.uak/tests/test_tla_check.py; Verify changed; | Why: scope or criteria fixed before review
 - 1794985912 | plan --amend | jeaneth-hernandez/jeaneth-hernandez | amended: UAK-098 | Why: scope or criteria fixed before review
 - 1794995446 | plan --amend | jeaneth-hernandez/jeaneth-hernandez | amended: UAK-103 Paths: scripts/tla_statechart.py, docs/tla/, kit/.uak/tests/test_tla_statechart.py → scripts/tla_statechart.py, scripts/tla_check.sh, docs/tla/, kit/.uak/tests/test_tla_check.py; Verify changed; | Why: scope or criteria fixed before review
+- 1795255851 | plan --amend | jeaneth-hernandez/jeaneth-hernandez | amended: UAK-097 | Why: scope or criteria fixed before review
