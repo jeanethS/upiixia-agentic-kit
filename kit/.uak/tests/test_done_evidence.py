@@ -57,13 +57,22 @@ def prose_evidence_still_passes(r):
 def numbers_and_ranges_are_not_false_pointers(r):
     # Review of UAK-097: a count like "6434945 states" is not a SHA, and file:N-M is a range, not a path.
     f = ready(r, "done-evidence-range")
-    out = done(f, "6434945 states, no error; checked src/app.py:1-1")
+    out = done(f, "6434945 states, no error at 12:30 over HTTP/1.1; checked \"src/app.py\" and src/app.py:1-1")
     data = json.loads(out.stdout)
     expect(out.returncode == 0 and data["state"] == "REVIEW", out.stdout + out.stderr)
 
 
+def a_bad_range_or_column_pointer_is_refused(r):
+    # Grok on UAK-097: file:line:col slipped through, and a range was checked only at its end.
+    f = ready(r, "done-evidence-col")
+    out = done(f, "see src/app.py:999:1 and src/app.py:999-1")
+    data = json.loads(out.stdout)
+    expect(data["code"] == "evidence-missing", out.stdout)
+    expect("src/app.py:999:1" in data["message"] and "src/app.py:999-1" in data["message"], out.stdout)
+
+
 TESTS = [a_missing_sha_is_refused, a_file_line_past_the_end_is_refused, prose_evidence_still_passes,
-         numbers_and_ranges_are_not_false_pointers]
+         numbers_and_ranges_are_not_false_pointers, a_bad_range_or_column_pointer_is_refused]
 
 
 def main():

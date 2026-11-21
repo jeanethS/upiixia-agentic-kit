@@ -56,22 +56,24 @@ ui_gate() {
     UAK_CODE=critic-stale conflict "critic.txt in .uak-shots/$ID/ is about another commit; this one is $short. Capture again and rerun design-critic on it."
 }
 evidence_gate() { # $1 tip, $2 worktree
-  local token path line count bad=
+  local token path line first count bad=
   while IFS= read -r token; do
-    token=$(printf '%s' "$token" | sed 's/^(//; s/[.,;:)]*$//')
+    token=$(printf '%s' "$token" | sed 's/^[("'"'"'`]*//; s/[.,;:)"'"'"'`]*$//')
     # A SHA has a digit and a letter: an all-digit token is a count ("6434945 states"), an all-letter one a word.
     if printf '%s\n' "$token" | grep -Eq '^[0-9a-f]{7,40}$' &&
        printf '%s\n' "$token" | grep -q '[0-9]' && printf '%s\n' "$token" | grep -q '[a-f]'; then
       git -C "$2" merge-base --is-ancestor "$token" "$1" 2>/dev/null && continue
-    elif printf '%s\n' "$token" | grep -Eq '^[A-Za-z0-9._/-]+:[0-9]+(-[0-9]+)?$'; then
-      path=${token%:*}; line=${token##*:}; line=${line##*-}
+    # file:line, file:line-line or file:line:col; the file part needs a / or an extension ("12:30" is a time).
+    elif printf '%s\n' "$token" | grep -Eq '^[A-Za-z0-9._/-]*[./][A-Za-z0-9._/-]*:[0-9]+(-[0-9]+|:[0-9]+)?$'; then
+      path=${token%%:*}; line=${token#*:}; line=${line%%:*}; first=${line%%-*}; line=${line##*-}
+      [ "$first" -le "$line" ] || line=$first
       if git -C "$2" cat-file -e "$1:$path" 2>/dev/null; then
         count=$(git -C "$2" show "$1:$path" | awk 'END{print NR}')
         [ "$count" -ge "$line" ] && continue
       fi
     else
       case "$token" in *://*) continue;; esac
-      printf '%s\n' "$token" | grep -Eq '/[^/]*\.[^/.]+$' || continue
+      printf '%s\n' "$token" | grep -Eq '/[^/]*\.[A-Za-z][A-Za-z0-9]*$' || continue
       git -C "$2" cat-file -e "$1:$token" 2>/dev/null && continue
     fi
     bad="${bad:+$bad, }$token"
