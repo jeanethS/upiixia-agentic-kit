@@ -8,6 +8,7 @@ Format rules (the CLI parses them):
 - `Uses contract:` soft dependency. It never blocks; it routes contract notices. Work against the mock.
 - `Paths:` relative paths separated by commas; directories end in `/`. Reserve everything you will touch.
 - `Verify:` one exact command that exits 0 when the task is done.
+- Example app Verify: `bash .claude/skills/verify-app/run.sh features/checkout.md` drives the app through a feature map entry.
 - `Estimate:` minutes or hours, used for the critical path.
 - `Tests:` the behaviors as test names, separated by commas: the spec. `uak red ID` sees them fail first; `done` checks each exists. A task with nothing to test first: `Test-First: no (why)`.
 
