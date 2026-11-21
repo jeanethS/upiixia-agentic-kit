@@ -54,7 +54,16 @@ def prose_evidence_still_passes(r):
     expect("State: REVIEW\n" in f.show("tasks/HACK-001.md"), "done must persist REVIEW")
 
 
-TESTS = [a_missing_sha_is_refused, a_file_line_past_the_end_is_refused, prose_evidence_still_passes]
+def numbers_and_ranges_are_not_false_pointers(r):
+    # Review of UAK-097: a count like "6434945 states" is not a SHA, and file:N-M is a range, not a path.
+    f = ready(r, "done-evidence-range")
+    out = done(f, "6434945 states, no error; checked src/app.py:1-1")
+    data = json.loads(out.stdout)
+    expect(out.returncode == 0 and data["state"] == "REVIEW", out.stdout + out.stderr)
+
+
+TESTS = [a_missing_sha_is_refused, a_file_line_past_the_end_is_refused, prose_evidence_still_passes,
+         numbers_and_ranges_are_not_false_pointers]
 
 
 def main():
