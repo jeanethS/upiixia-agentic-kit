@@ -11,6 +11,11 @@ import tempfile
 import time
 import unittest
 
+from test_hack import resolve_binary
+
+# Git Bash on Windows: a bare "bash" there is WSL's launcher, which has no distribution on the runners.
+BASH = resolve_binary("bash")
+
 
 PACKAGE = Path(__file__).resolve().parents[2]
 TESTS = ("a_repeated_judgment_rule_is_listed", "a_rule_with_a_check_is_not_listed",
@@ -52,7 +57,7 @@ class GardenCandidates(unittest.TestCase):
         corrections = [CORRECTION, CHECKED_CORRECTION] * 2
         if source == "transcripts":
             main = str(self.git_dir.parent)
-            win = subprocess.run(["bash", "-c", 'cygpath -m "$1" 2>/dev/null', "_", main],
+            win = subprocess.run([BASH, "-c", 'cygpath -m "$1" 2>/dev/null', "_", main],
                                  env=self.env, capture_output=True, text=True).stdout.strip()
             folder = self.home / "projects" / re.sub(r"[^A-Za-z0-9]", "-", win or main)
             folder.mkdir(parents=True, exist_ok=True)
@@ -66,7 +71,7 @@ class GardenCandidates(unittest.TestCase):
             self.write(".git/uak-blackbox.pending", "\n".join(lines) + "\n")
 
     def garden(self):
-        result = subprocess.run(["bash", str(PACKAGE / ".uak/bin/garden")], cwd=self.repo,
+        result = subprocess.run([BASH, str(PACKAGE / ".uak/bin/garden")], cwd=self.repo,
                                 env=self.env, text=True, capture_output=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stderr, "")

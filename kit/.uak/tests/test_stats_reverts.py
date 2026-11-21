@@ -7,6 +7,11 @@ import subprocess
 import tempfile
 import unittest
 
+from test_hack import resolve_binary
+
+# Git Bash on Windows: a bare "bash" there is WSL's launcher, which has no distribution on the runners.
+BASH = resolve_binary("bash")
+
 
 PACKAGE = Path(__file__).resolve().parents[2]
 
@@ -50,7 +55,7 @@ class StatsReverts(unittest.TestCase):
         return self.git("rev-parse", "HEAD"), member
 
     def stats(self):
-        result = subprocess.run(["bash", str(PACKAGE / ".uak/bin/stats"),
+        result = subprocess.run([BASH, str(PACKAGE / ".uak/bin/stats"),
                                  "--dir", str(self.claims)], cwd=self.repo,
                                 env=self.env, text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

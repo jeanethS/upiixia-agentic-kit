@@ -12,6 +12,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from test_hack import resolve_binary
+
+# Git Bash on Windows: a bare "bash" there is WSL's launcher, which has no distribution on the runners.
+BASH = resolve_binary("bash")
+
 REPO = Path(__file__).resolve().parents[3]
 SCRIPT = REPO / "scripts" / "tla_check.sh"
 TLA = REPO / "docs" / "tla"
@@ -22,7 +27,7 @@ def source_repo():
 
 
 def run(*args, env=None):
-    return subprocess.run(["bash", str(SCRIPT)] + list(args), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    return subprocess.run([BASH, str(SCRIPT)] + list(args), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                           universal_newlines=True, env=dict(os.environ, **(env or {})), timeout=900)
 
 

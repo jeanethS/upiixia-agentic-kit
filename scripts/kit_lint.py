@@ -74,11 +74,11 @@ def code_lines(path, findings):
                 expires = date.fromisoformat(expiry[1])
             except ValueError:
                 findings.append("%s:%d · exception-expiry · invalid expiry date %s" %
-                                (path.relative_to(ROOT), n, expiry[1]))
+                                (path.relative_to(ROOT).as_posix(), n, expiry[1]))
                 continue
             if expires < today:
                 findings.append("%s:%d · exception-expiry · expired on %s" %
-                                (path.relative_to(ROOT), n, expires))
+                                (path.relative_to(ROOT).as_posix(), n, expires))
                 continue
         exceptions.add(n)
     for n, line in enumerate(lines, 1):
@@ -108,7 +108,7 @@ def check_why_enforced(findings):
             continue
         if header is None or all(re.fullmatch(r":?-+:?", cell) for cell in cells):
             continue
-        prefix = "%s:%d · why-enforced · " % (path.relative_to(ROOT), n)
+        prefix = "%s:%d · why-enforced · " % (path.relative_to(ROOT).as_posix(), n)
         column = header.index("Enforced by") if "Enforced by" in header else len(cells)
         if column >= len(cells) or not cells[column]:
             findings.append(prefix + "rule needs a nonempty Enforced by column")
@@ -247,7 +247,7 @@ def check_structure(findings):
                 findings.append("kit/.uak/skills/SOURCES.md · unrecorded-skill · %s has no provenance row" % s)
     for p in sorted(BIN.iterdir()):
         if p.is_file() and p.suffix not in (".py", ".html", ".awk", ".pyc") and not (p.stat().st_mode & 0o111):
-            findings.append("%s · not-executable · chmod +x" % p.relative_to(ROOT))
+            findings.append("%s · not-executable · chmod +x" % p.relative_to(ROOT).as_posix())
     agents = (ROOT / "kit/AGENTS.md").read_text(encoding="utf-8")
     words, lines = len(agents.split()), len(agents.splitlines())
     if lines > 100 or words > 1300:
