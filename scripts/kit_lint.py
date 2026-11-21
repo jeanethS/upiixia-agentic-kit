@@ -135,6 +135,15 @@ def bash_scripts():
                 yield p
 
 
+def bash():
+    # On Windows a bare "bash" is WSL's launcher; the kit runs under Git Bash.
+    if os.name == "nt":
+        git_bash = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git" / "bin" / "bash.exe"
+        if git_bash.is_file():
+            return str(git_bash)
+    return "bash"
+
+
 def check_portability(findings):
     for p in bash_scripts():
         rel = p.relative_to(ROOT)
@@ -159,7 +168,7 @@ def check_portability(findings):
                 findings.append("%s:%d · awk-interval · mawk ignores {n} intervals in awk regexes: use grep -E" % (rel, n))
         if p.read_bytes().find(b"\r\n") >= 0:
             findings.append("%s · crlf · a CRLF script fails under bash on Linux and WSL" % rel)
-        r = subprocess.run(["bash", "-n", str(p)], capture_output=True, text=True)
+        r = subprocess.run([bash(), "-n", str(p)], capture_output=True, text=True)
         if r.returncode != 0:
             findings.append("%s · syntax · bash -n: %s" % (rel, r.stderr.strip()[:200]))
 
@@ -261,7 +270,7 @@ def check_garden(findings):
         d = Path(tempfile.mkdtemp(prefix="kit-lint-"))
         try:
             subprocess.run(["git", "init", "-q", "-b", "main", str(d)], check=True, capture_output=True)
-            subprocess.run(["bash", str(ROOT / "install.sh"), "--mode", mode, "--stack", "fastapi-react", str(d)], check=True, capture_output=True)
+            subprocess.run([bash(), str(ROOT / "install.sh"), "--mode", mode, "--stack", "fastapi-react", str(d)], check=True, capture_output=True)
             out = subprocess.run(["bash", ".uak/bin/uak", "garden"], cwd=d, capture_output=True, text=True, errors="replace").stdout
             drift = out.split("DRIFT", 1)[1].split("\n\n", 1)[0].splitlines()[1:] if "DRIFT" in out else ["no DRIFT section"]
             for line in drift:
