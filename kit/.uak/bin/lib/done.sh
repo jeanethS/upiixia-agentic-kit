@@ -55,6 +55,33 @@ ui_gate() {
   grep -q "$short" "$d/critic.txt" ||
     UAK_CODE=critic-stale conflict "critic.txt in .uak-shots/$ID/ is about another commit; this one is $short. Capture again and rerun design-critic on it."
 }
+evidence_gate() { # $1 tip, $2 worktree
+  local token path line first count bad=
+  while IFS= read -r token; do
+    token=$(printf '%s' "$token" | sed 's/^[("'"'"'`]*//; s/[.,;:)"'"'"'`]*$//')
+    # A SHA has a digit and a letter: an all-digit token is a count ("6434945 states"), an all-letter one a word.
+    if printf '%s\n' "$token" | grep -Eq '^[0-9a-f]{7,40}$' &&
+       printf '%s\n' "$token" | grep -q '[0-9]' && printf '%s\n' "$token" | grep -q '[a-f]'; then
+      # Any commit the repository has: evidence may cite a combined CI run or a sibling task, not only this branch.
+      git -C "$2" cat-file -e "$token^{commit}" 2>/dev/null && continue
+    # file:line, file:line-line or file:line:col; the file part needs a / or an extension ("12:30" is a time).
+    # The file part has a / or a letter extension: "12:30" is a time, 127.0.0.1:4173 a host and port.
+    elif printf '%s\n' "$token" | grep -Eq '^([A-Za-z0-9._-]*/[A-Za-z0-9._/-]*|[A-Za-z0-9_-][A-Za-z0-9._-]*\.[A-Za-z][A-Za-z0-9]*):[0-9]+(-[0-9]+|:[0-9]+)?$'; then
+      path=${token%%:*}; line=${token#*:}; line=${line%%:*}; first=${line%%-*}; line=${line##*-}
+      [ "$first" -le "$line" ] || line=$first
+      if git -C "$2" cat-file -e "$1:$path" 2>/dev/null; then
+        count=$(git -C "$2" show "$1:$path" | awk 'END{print NR}')
+        [ "$count" -ge "$line" ] && continue
+      fi
+    else
+      case "$token" in *://*|/*) continue;; esac   # a URL, or an absolute path outside the repo
+      printf '%s\n' "$token" | grep -Eq '/[^/]*\.[A-Za-z][A-Za-z0-9]*$' || continue
+      git -C "$2" cat-file -e "$1:$token" 2>/dev/null && continue
+    fi
+    bad="${bad:+$bad, }$token"
+  done < <(printf '%s\n' "$EVIDENCE_TEXT" | tr -s ' \t' '\n')
+  [ -z "$bad" ] || UAK_CODE=evidence-missing conflict "Evidence for $ID points at what the branch does not have: $bad. Fix the pointer (a commit on this branch, a file:line that exists) or drop it."
+}
 # Tests only grow, a task's named tests exist, and its test failed before its code. Why (v5.10, test-first): agents
 # optimize toward green; stuck on red they edit the assertion, add a skip or delete the test, and a test written after
 # the code passes by construction. Each rule is a check here, not a line of prose (lib/tests.sh).
@@ -241,6 +268,8 @@ done_mutate() {
     STATE=INTEGRATED
     put "$RECORD" Merge-Commit "$merged"; put "$RECORD" Reviewer "$REVIEWER"
   fi
+  # Check the user's raw evidence before the other gates append their notes.
+  [ "$STATE" != REVIEW ] || evidence_gate "$tip" "$task_worktree"
   [ "$STATE" != REVIEW ] || ui_gate "$tip" "$task_worktree"
   [ "$STATE" != REVIEW ] || test_gate "$tip" "$task_worktree"
   put "$RECORD" Task-Tip "$tip"
@@ -330,6 +359,7 @@ done_mutate() {
 }
 # Before the transaction: the PR URL names this repository, and the lines the task adds pass design-lint.
 done_args_check() {
+  EVIDENCE_TEXT=$EVIDENCE
   # Both flags in one error, with the whole command. Why (Hacktoberfest): `done` failed 3 times in a row, first
   # on --pr, then on --evidence; neither wt pr nor the hint named them.
   done_usage="Usage: bash .uak/bin/uak done ${ID:-ID} --pr URL --evidence \"<Verify command> exit 0; <criteria checked>\" (the PR URL: bash .uak/bin/wt pr)"
