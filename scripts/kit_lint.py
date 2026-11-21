@@ -74,11 +74,11 @@ def code_lines(path, findings):
                 expires = date.fromisoformat(expiry[1])
             except ValueError:
                 findings.append("%s:%d · exception-expiry · invalid expiry date %s" %
-                                (path.relative_to(ROOT), n, expiry[1]))
+                                (path.relative_to(ROOT).as_posix(), n, expiry[1]))
                 continue
             if expires < today:
                 findings.append("%s:%d · exception-expiry · expired on %s" %
-                                (path.relative_to(ROOT), n, expires))
+                                (path.relative_to(ROOT).as_posix(), n, expires))
                 continue
         exceptions.add(n)
     for n, line in enumerate(lines, 1):
@@ -108,7 +108,7 @@ def check_why_enforced(findings):
             continue
         if header is None or all(re.fullmatch(r":?-+:?", cell) for cell in cells):
             continue
-        prefix = "%s:%d · why-enforced · " % (path.relative_to(ROOT), n)
+        prefix = "%s:%d · why-enforced · " % (path.relative_to(ROOT).as_posix(), n)
         column = header.index("Enforced by") if "Enforced by" in header else len(cells)
         if column >= len(cells) or not cells[column]:
             findings.append(prefix + "rule needs a nonempty Enforced by column")
@@ -135,6 +135,15 @@ def bash_scripts():
                 yield p
 
 
+def bash():
+    # On Windows a bare "bash" is WSL's launcher; the kit runs under Git Bash.
+    if os.name == "nt":
+        git_bash = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git" / "bin" / "bash.exe"
+        if git_bash.is_file():
+            return str(git_bash)
+    return "bash"
+
+
 def check_portability(findings):
     for p in bash_scripts():
         rel = p.relative_to(ROOT)
@@ -159,7 +168,7 @@ def check_portability(findings):
                 findings.append("%s:%d · awk-interval · mawk ignores {n} intervals in awk regexes: use grep -E" % (rel, n))
         if p.read_bytes().find(b"\r\n") >= 0:
             findings.append("%s · crlf · a CRLF script fails under bash on Linux and WSL" % rel)
-        r = subprocess.run(["bash", "-n", str(p)], capture_output=True, text=True)
+        r = subprocess.run([bash(), "-n", str(p)], capture_output=True, text=True)
         if r.returncode != 0:
             findings.append("%s · syntax · bash -n: %s" % (rel, r.stderr.strip()[:200]))
 
@@ -247,7 +256,7 @@ def check_structure(findings):
                 findings.append("kit/.uak/skills/SOURCES.md · unrecorded-skill · %s has no provenance row" % s)
     for p in sorted(BIN.iterdir()):
         if p.is_file() and p.suffix not in (".py", ".html", ".awk", ".pyc") and not (p.stat().st_mode & 0o111):
-            findings.append("%s · not-executable · chmod +x" % p.relative_to(ROOT))
+            findings.append("%s · not-executable · chmod +x" % p.relative_to(ROOT).as_posix())
     agents = (ROOT / "kit/AGENTS.md").read_text(encoding="utf-8")
     words, lines = len(agents.split()), len(agents.splitlines())
     if lines > 100 or words > 1300:
@@ -261,7 +270,7 @@ def check_garden(findings):
         d = Path(tempfile.mkdtemp(prefix="kit-lint-"))
         try:
             subprocess.run(["git", "init", "-q", "-b", "main", str(d)], check=True, capture_output=True)
-            subprocess.run(["bash", str(ROOT / "install.sh"), "--mode", mode, "--stack", "fastapi-react", str(d)], check=True, capture_output=True)
+            subprocess.run([bash(), str(ROOT / "install.sh"), "--mode", mode, "--stack", "fastapi-react", str(d)], check=True, capture_output=True)
             out = subprocess.run(["bash", ".uak/bin/uak", "garden"], cwd=d, capture_output=True, text=True, errors="replace").stdout
             drift = out.split("DRIFT", 1)[1].split("\n\n", 1)[0].splitlines()[1:] if "DRIFT" in out else ["no DRIFT section"]
             for line in drift:

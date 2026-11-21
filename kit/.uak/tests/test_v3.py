@@ -199,8 +199,9 @@ def guard_subagent_budget(r):
         ti = {"subagent_type": kind, "prompt": 'quote \"model\": opus inside text'}
         if model: ti["model"] = model
         payload = json.dumps({"session_id": "s1", "tool_name": "Agent", "tool_input": ti})
+        # Pace off: the caps under test come from PROJECT.md, not from this machine's plan usage (`uak pace`).
         return r.run([r.bash, "-c", "printf '%s' \"$1\" | bash .uak/bin/guard agent", "_", payload], cwd=w, allowed=None,
-                     env=extra or {})
+                     env=dict({"UAK_PACE": "off"}, **(extra or {})))
     stop = lambda: r.run([r.bash, "-c", "printf '{}' | bash .uak/bin/guard agent-stop"], cwd=w)
     expect(spawn("uak-scout").returncode == 0, "first haiku scout allowed")
     expect(spawn("general-purpose", "opus").returncode == 0, "first opus allowed")

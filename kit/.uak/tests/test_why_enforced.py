@@ -30,7 +30,7 @@ class WhyEnforced(unittest.TestCase):
     def write(self, name, text):
         p = self.root / name
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(text, encoding="utf-8")
+        p.write_bytes(text.encode("utf-8"))  # LF on Windows too: a CRLF fixture is its own lint finding
 
     def run_lint(self):
         out = io.StringIO()
