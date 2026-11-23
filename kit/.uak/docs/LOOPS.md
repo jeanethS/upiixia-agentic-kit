@@ -48,6 +48,19 @@ kept and named. Then Verify runs once on the merged result: `LOOP_PASS parallel`
 - `--prompt FILE` adds task context, for example the task section from TASKS.md.
 - Safety: the agent runs with ITS OWN permissions. Keep the uak guard hooks on, and never loop on a command that deploys or publishes.
 
+## Before reporting a speedup
+
+A loop that optimizes stops on a number, so the number has to hold. Answer all seven before reporting one; any you cannot answer makes the verdict **inconclusive**, and that is a valid result to report.
+
+1. What is the limiter: CPU, disk, network, process starts or a lock? A change that does not touch it cannot speed it up.
+2. Is the setup tuned like production (same OS, shell, data size, caches warm or cold as users see them)?
+3. How close is the result to the physical limit (one process start, one round trip, one disk read)? A gain past it is a measuring error.
+4. Did every run finish without errors? A failing run is often a fast run.
+5. Were old and new run alternating, back to back, with the median and range of each reported? One run each is noise.
+6. Does the gain show end to end, in what the user or agent waits for, not only in the timed function?
+7. Is the work inside the timed region the same in both (no setup moved out, no step skipped, no cached result reused)?
+
+
 ## Rules
 - Verify from a clean build. An e2e suite that passes against a stale `dist/` or cache proves nothing (UpiixSol: 12/12 green, 3 failures after a fresh build).
 1. No loop without a machine verifier. "Looks good" is not a verifier.
