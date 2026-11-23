@@ -171,6 +171,7 @@ Every command prints its result as text (`OK …`, `CONFLICT: …`, `ERROR: …`
 | `lease-active` · `read-token` | Someone else's live lease; or read its summary first and pass the `Read-token`. |
 | `own-review` · `review-locked` · `head-moved` · `standing-reject` | Review rules: never your own task; someone is reviewing that SHA; review the current HEAD; a reject still covers this code. |
 | `tests-weakened` · `tests-missing` · `red-missing` | Test-first at `done`: an existing test changed, a named test is missing, no red recorded (`uak red ID`). |
+| `evidence-missing` | Evidence at `done` cites a commit, path or file:line missing from the task tip. Fix the pointer or drop it. |
 | `ui-shots-missing` · `critic-fix` · `critic-stale` | A UI task ships with its screenshots and the critic's SHIP for this commit. |
 | `human-only` | A human decision (`UAK_HUMAN`). |
 | `secret-refused` | The claims branch would get something that looks like a secret. |
